@@ -44,7 +44,7 @@ namespace Control {
 
 		private void OnTriggerExit2D(Collider2D other) {
 			if (rubbing && other.gameObject.GetInstanceID() == rubbingInstanceID) {
-				OnStopRubbing(other.gameObject);
+				OnStopRubbing();
 				other.gameObject.GetInstanceID();
 			} else {
 				StopCoroutine(rubbingTriggerCoroutine);
@@ -63,11 +63,24 @@ namespace Control {
 			accumulationCoroutine = StartCoroutine(accumulateCharge());
 		}
 
-		private void OnStopRubbing(GameObject material) {
+		private void OnStopRubbing() {
 			rubbing = false;
-			StopCoroutine(accumulationCoroutine);
+			if (accumulationCoroutine != null) {
+				StopCoroutine(accumulationCoroutine);
+			}
 			accumulationCoroutine = null;
 			accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
+			rubbingInstanceID = -1;
+		}
+		
+		public void OnResetRubbing() {
+			rubbing = false;
+			if (accumulationCoroutine != null) {
+				StopCoroutine(accumulationCoroutine);
+			}
+			accumulationCoroutine = null;
+			accumulatedCharge = 0;
+			accumulatedTime = 0;
 			rubbingInstanceID = -1;
 		}
 
@@ -86,8 +99,10 @@ namespace Control {
 			OnStartRubbing(material);
 		}
 
+		//TODO: Consider whether rubbing will invoke DoContactCharging, this affects accumulatedCharge.
 		private IEnumerator accumulateCharge() {
 			accumulatedTime += Time.deltaTime;
+			accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
 			yield return null;
 		}
 	}

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Control;
 using Unity.Mathematics;
 using UnityEngine;
@@ -30,6 +31,29 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		if (scenes.Count <= sceneIndex) {
 			SceneManager.LoadScene(scenes[sceneIndex]);
 		}
+	}
+
+	public List<T> GetAllSceneComponents<T>() {
+		return GetAllSceneGameObjects().Select(obj => obj.GetComponent<T>()).ToList();
+	}
+
+	public List<GameObject> GetAllSceneGameObjects() {
+		var x = SceneManager.GetActiveScene().GetRootGameObjects();
+		var all = new List<GameObject>();
+		foreach (var roots in x) {
+			all.AddRange(GetChildGameObjects(roots));
+		}
+		
+		List<GameObject> GetChildGameObjects(GameObject obj) {
+			var objList = new List<GameObject>();
+			for (var i = 0; i < obj.transform.childCount; i++) {
+				objList.AddRange(GetChildGameObjects(obj.transform.GetChild(i).gameObject));
+			}
+			objList.Add(obj);
+			return objList;
+		}
+
+		return all;
 	}
 	#endregion
 
