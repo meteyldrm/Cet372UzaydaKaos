@@ -65,7 +65,9 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// [Row, Index, Iteration] = "IntSeconds | materialID". 
 	/// Iteration != 0 is used for the expanded report. Copy values, leave seconds empty.
 	/// </summary>
-	public string[,,] materialReportArray;
+	[Tooltip("Utilize the string as \"Vector3 ; IntSeconds | materialID\"")]
+	[SerializeField] private List<string> materialReportInitializationList;
+	public string[,,] materialReportArray = new string[3,2,2];
 	#endregion
 
 	#region Draggable Intercept
@@ -139,6 +141,14 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	#endregion
 
 	private void Start() {
+		//Report initializer for testing prefab generation across scenes.
+		if (materialReportInitializationList.Count > 0) {
+			foreach (var i in materialReportInitializationList) {
+				var x = i.Split(" ; ");
+				var y = x[0].Split(",");
+				materialReportArray[int.Parse(y[0]), int.Parse(y[1]), int.Parse(y[2])] = x[1];
+			}
+		}
 	}
 
 	private void Update() {
