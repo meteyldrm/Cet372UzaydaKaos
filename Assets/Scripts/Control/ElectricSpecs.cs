@@ -101,9 +101,11 @@ namespace Control {
 
 		//TODO: Consider whether rubbing will invoke DoContactCharging, this affects accumulatedCharge.
 		private IEnumerator accumulateCharge() {
-			accumulatedTime += Time.deltaTime;
-			accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
-			yield return null;
+			while (rubbing) {
+				accumulatedTime += Time.deltaTime;
+				accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
+				yield return null;
+			}
 		}
 	}
 }

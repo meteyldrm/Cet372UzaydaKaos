@@ -34,7 +34,16 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	}
 
 	public static List<T> GetAllSceneComponents<T>() {
-		return GetAllSceneGameObjects(requireActive: true).Select(obj => obj.GetComponent<T>()).ToList();
+		var all = new List<T>();
+		foreach (var obj in GetAllSceneGameObjects(requireActive: true)) {
+			if (obj.TryGetComponent(out T component)) {
+				if (component != null) {
+					all.Add(component);
+				}
+			}
+		}
+
+		return all;
 	}
 
 	public static List<GameObject> GetAllSceneGameObjects(bool requireActive = false) {

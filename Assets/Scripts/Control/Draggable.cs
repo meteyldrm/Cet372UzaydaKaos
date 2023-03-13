@@ -36,11 +36,12 @@ namespace Control {
 
         private const float interceptRadius = 0.75f;
         private const float smoothingStrength = 0.3f;
-        private CircleCollider2D selfCollider;
+        private Collider2D selfCollider;
+        public colliderType colliderType;
     
         private void Awake() {
             var _rb = gameObject.GetComponent<Rigidbody2D>();
-            var _selfCollider = GetComponent<CircleCollider2D>();
+            var _selfCollider = GetComponent<Collider2D>();
 
             if (_rb == null) {
                 gameObject.AddComponent<Rigidbody2D>();
@@ -48,10 +49,14 @@ namespace Control {
                 _rb.gravityScale = 0f;
             }
             
-            if (_selfCollider == null) {
-                gameObject.AddComponent<CircleCollider2D>();
-                _selfCollider = GetComponent<CircleCollider2D>();
-                _selfCollider.radius = 60f;
+            if (_selfCollider == null && colliderType == colliderType.Circle) {
+                _selfCollider = gameObject.AddComponent<CircleCollider2D>();
+                ((CircleCollider2D)_selfCollider).radius = 60f;
+                _selfCollider.isTrigger = true;
+            } else if (_selfCollider == null && colliderType == colliderType.Box) {
+                _selfCollider = gameObject.AddComponent<BoxCollider2D>();
+                ((BoxCollider2D)_selfCollider).size = new Vector2(70, 70);
+                ((BoxCollider2D)_selfCollider).edgeRadius = 0.15f;
                 _selfCollider.isTrigger = true;
             }
             
@@ -72,7 +77,7 @@ namespace Control {
             }
 
             if (selfCollider == null) {
-                selfCollider = GetComponent<CircleCollider2D>();
+                selfCollider = GetComponent<Collider2D>();
             }
         }
 
@@ -136,5 +141,10 @@ namespace Control {
                 }
             }
         }
+    }
+
+    public enum colliderType {
+        Circle,
+        Box
     }
 }

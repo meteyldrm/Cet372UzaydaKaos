@@ -482,6 +482,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dd887519f8b41b2aba0a7e3c6f0b66e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  colliderType: 0
 --- !u!114 &419499209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -534,7 +535,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materialID: 1
   materialName: Glass
-  chargePerUnitTime: -4
+  chargePerUnitTime: -0.8
   accumulatedTime: 0
   accumulatedCharge: 0
 --- !u!1 &568051055
@@ -880,6 +881,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dd887519f8b41b2aba0a7e3c6f0b66e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  colliderType: 0
 --- !u!114 &682068577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -894,7 +896,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materialID: 0
   materialName: Boot
-  chargePerUnitTime: 3
+  chargePerUnitTime: 0.6
   accumulatedTime: 0
   accumulatedCharge: 0
 --- !u!1 &783245739
@@ -1085,6 +1087,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerName: 
+  materialReportInitializationList: []
 --- !u!4 &1479661972
 Transform:
   m_ObjectHideFlags: 0
