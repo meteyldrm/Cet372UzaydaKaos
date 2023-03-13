@@ -25,7 +25,7 @@ namespace SceneManagers {
         }
 
         public void ResetDraggableCharges() {
-            foreach (var obj in GeneralGuidance.Instance.GetAllSceneComponents<ElectricSpecs>()) {
+            foreach (var obj in GeneralGuidance.GetAllSceneComponents<ElectricSpecs>()) {
                 obj.OnResetRubbing();
             }
             chargeText.GetComponent<TMP_Text>().text = "Boot charge: 0";

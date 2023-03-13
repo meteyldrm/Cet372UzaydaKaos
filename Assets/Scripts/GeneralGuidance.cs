@@ -33,11 +33,11 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		}
 	}
 
-	public List<T> GetAllSceneComponents<T>() {
-		return GetAllSceneGameObjects().Select(obj => obj.GetComponent<T>()).ToList();
+	public static List<T> GetAllSceneComponents<T>() {
+		return GetAllSceneGameObjects(requireActive: true).Select(obj => obj.GetComponent<T>()).ToList();
 	}
 
-	public List<GameObject> GetAllSceneGameObjects() {
+	public static List<GameObject> GetAllSceneGameObjects(bool requireActive = false) {
 		var x = SceneManager.GetActiveScene().GetRootGameObjects();
 		var all = new List<GameObject>();
 		foreach (var roots in x) {
@@ -46,10 +46,14 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		
 		List<GameObject> GetChildGameObjects(GameObject obj) {
 			var objList = new List<GameObject>();
-			for (var i = 0; i < obj.transform.childCount; i++) {
-				objList.AddRange(GetChildGameObjects(obj.transform.GetChild(i).gameObject));
+			//Only return the active branch of objects, disabled objects return null
+			if ((requireActive && obj.activeSelf) || !requireActive) {
+				for (var i = 0; i < obj.transform.childCount; i++) {
+					objList.AddRange(GetChildGameObjects(obj.transform.GetChild(i).gameObject));
+				}
+				
+				objList.Add(obj);
 			}
-			objList.Add(obj);
 			return objList;
 		}
 
@@ -81,7 +85,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	private bool isClicking;
 
 	/// <summary>
-	/// Draggable intercept depends on the canDrag attribute of the draggable. Make sure they're bound to their respective controllers (report items' values will be set to false)
+	/// Draggable intercept depends on the canDrag attribute of the draggable. Make sure they're bound to their respective controllers (report items' values will be set to false).
+	/// If the report draggable intercepts the touch while 
 	/// </summary>
 	private void DoDraggableIntercept() {
 		if (dragPause) return;
