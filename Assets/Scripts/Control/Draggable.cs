@@ -27,22 +27,20 @@ namespace Control {
     public class Draggable : MonoBehaviour {
         private Rigidbody2D rb;
     
-        // The report field will set this to false after it snaps into place so it can't be dragged or intercepted.
-        [NonSerialized] public bool canDrag = true;
+        private bool canDrag = true;
         private bool dragging;
         private Vector2 interceptOffset = Vector2.zero;
 
         private float lerpTime;
-    
         private Vector2 screenVector;
 
         private const float interceptRadius = 0.75f;
-
-        private CircleCollider2D sCollider;
+        private const float smoothingStrength = 0.3f;
+        private CircleCollider2D selfCollider;
     
-        private void Start() {
+        private void Awake() {
             var _rb = gameObject.GetComponent<Rigidbody2D>();
-            var _sCollider = GetComponent<CircleCollider2D>();
+            var _selfCollider = GetComponent<CircleCollider2D>();
 
             if (_rb == null) {
                 gameObject.AddComponent<Rigidbody2D>();
@@ -50,14 +48,18 @@ namespace Control {
                 _rb.gravityScale = 0f;
             }
             
-            if (_sCollider == null) {
+            if (_selfCollider == null) {
                 gameObject.AddComponent<CircleCollider2D>();
-                _sCollider = GetComponent<CircleCollider2D>();
-                _sCollider.radius = 60f;
+                _selfCollider = GetComponent<CircleCollider2D>();
+                _selfCollider.radius = 60f;
+                _selfCollider.isTrigger = true;
             }
             
             rb = _rb;
-            sCollider = _sCollider;
+            selfCollider = _selfCollider;
+        }
+
+        private void Start() {
         }
 
         private void OnDisable() {
@@ -69,19 +71,19 @@ namespace Control {
                 rb = gameObject.GetComponent<Rigidbody2D>();
             }
 
-            if (sCollider == null) {
-                sCollider = GetComponent<CircleCollider2D>();
+            if (selfCollider == null) {
+                selfCollider = GetComponent<CircleCollider2D>();
             }
         }
 
         private void FixedUpdate() {
             interceptOffset = Vector2.Lerp(interceptOffset, Vector2.zero, lerpTime);
-            lerpTime += Time.fixedDeltaTime / 15f;
+            lerpTime += Time.fixedDeltaTime / (smoothingStrength * 50);
         }
 
         private void Update() {
             if (canDrag && dragging) {
-                rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * 3);
+                rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * smoothingStrength * 10);
             }
         }
 
@@ -120,6 +122,7 @@ namespace Control {
             screenVector = goal - interceptOffset;
         }
 
+        //This is used when snapping in place
         private void doDrag(bool state) {
             if (state) {
                 dragging = true;
@@ -127,6 +130,8 @@ namespace Control {
                 try {
                     rb.velocity = Vector2.zero;
                     dragging = false;
+                    interceptOffset = Vector2.zero;
+                    screenVector = Vector2.zero;
                 } catch (NullReferenceException) {
                 }
             }

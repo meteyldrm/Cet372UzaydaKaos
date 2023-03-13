@@ -4,14 +4,16 @@ using UnityEngine;
 namespace SceneManagers {
     public class PlaygroundGuidance : MonoBehaviour, GeneralGuidance.IDraggableController {
         public GameObject draggable;
+        public Camera cam;
         
         // Start is called before the first frame update
-        void Start() {
+        private void Start() {
             GeneralGuidance.Instance.DraggableController = this;
+            GeneralGuidance.Instance.registerCamera(cam);
         }
 
         // Update is called once per frame
-        void Update()
+        private void Update()
         {
         
         }

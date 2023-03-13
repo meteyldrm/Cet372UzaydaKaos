@@ -48,8 +48,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	private bool dragPause;
 	private bool dragDeadlock;
 	private Draggable draggingObject;
-	public Camera cam;
-	public bool cameraRegistered;
+	private Camera cam;
+	private bool cameraRegistered;
 	
 	public IDraggableController DraggableController;
 	private bool isClicking;
