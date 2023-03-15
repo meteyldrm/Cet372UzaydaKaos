@@ -4,10 +4,14 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Control {
 	/// <summary>
-	/// Manages the electrical interactivity between objects. Implement friction logic here.
+	/// Charge interactions will take place according to proton density (how many + charges the object holds).
+	/// The rubbing charge calculations happen based on charge_1 = time * (affinity_1 - affinity2) * (proton_density_1 / (proton_density_1 + proton_density_2))
+	/// The contact charge calculations happen based on charge_1 = (electron_density_1 + electron_density_2) * (proton_density_1 / (proton_density_1 + proton_density_2))
+	/// electron_density = proton_density - accumulatedCharge
 	/// TODO: Introduce a canCharge field.
 	/// </summary>
 	public class ElectricSpecs : MonoBehaviour {
@@ -20,12 +24,16 @@ namespace Control {
 		/// The capacitance function should not allow for f = ~0 to be charged at all.
 		/// Since a numerical mapping for the capacitance does not exist, we simply check if chargePerUnitTime == 0
 		/// </summary>
-		[Tooltip("Divide Exp1 value by 5 (seconds)")] public float chargePerUnitTime;
+		[Tooltip("Divide Exp1 value by 5 (seconds)")] public float chargeAffinity;
+		[Tooltip("The number of protons the object will display")] public float protonDensity = 3;
+		private float electronDensity => protonDensity - accumulatedCharge;
 
+		public bool canCharge;
 		public float accumulatedTime;
 		public float accumulatedCharge;
 		private bool rubbing;
 		private int rubbingInstanceID;
+		private ElectricSpecs contactItem;
 
 		private Rigidbody2D rb;
 		private Draggable drag;
@@ -38,17 +46,28 @@ namespace Control {
 			drag = GetComponent<Draggable>();
 		}
 
+		/// <summary>
+		/// Predicted problems:
+		/// canCharge might change while inside the trigger, leading to the object not getting charged as expected.
+		/// </summary>
+		/// <param name="col"></param>
 		private void OnTriggerEnter2D(Collider2D col) {
-			rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(col.gameObject));
+			if (canCharge) {
+				rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(col.gameObject));
+			}
 		}
 
 		private void OnTriggerExit2D(Collider2D other) {
+			if (drag.dragging) {
+				print($"Collider window velocity {drag.calculateAverageVelocity()}");
+			}
 			if (rubbing && other.gameObject.GetInstanceID() == rubbingInstanceID) {
 				OnStopRubbing();
-				other.gameObject.GetInstanceID();
 			} else {
-				StopCoroutine(rubbingTriggerCoroutine);
-				rubbingTriggerCoroutine = null;
+				if (rubbingTriggerCoroutine != null) {
+					StopCoroutine(rubbingTriggerCoroutine);
+					rubbingTriggerCoroutine = null;
+				}
 			}
 		}
 
@@ -58,9 +77,12 @@ namespace Control {
 		/// </summary>
 		/// <param name="material"></param>
 		private void OnStartRubbing(GameObject material) {
-			rubbingInstanceID = material.gameObject.GetInstanceID();
-			accumulatedTime = 0;
-			accumulationCoroutine = StartCoroutine(accumulateCharge());
+			if (canCharge && material.TryGetComponent(out ElectricSpecs specs)) {
+				contactItem = specs;
+				rubbingInstanceID = material.gameObject.GetInstanceID();
+				accumulatedTime = 0;
+				accumulationCoroutine = StartCoroutine(accumulateCharge());
+			}
 		}
 
 		private void OnStopRubbing() {
@@ -69,7 +91,7 @@ namespace Control {
 				StopCoroutine(accumulationCoroutine);
 			}
 			accumulationCoroutine = null;
-			accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
+			accumulatedCharge = Mathf.Floor(chargeAffinity * accumulatedTime);
 			rubbingInstanceID = -1;
 		}
 		
@@ -90,7 +112,9 @@ namespace Control {
 		/// </summary>
 		/// <param name="material"></param>
 		private void DoContactCharging(GameObject material) {
-			
+			if (canCharge) {
+				//material.
+			}
 		}
 
 		private IEnumerator invokeRubbingWithDelay(GameObject material) {
@@ -101,9 +125,9 @@ namespace Control {
 
 		//TODO: Consider whether rubbing will invoke DoContactCharging, this affects accumulatedCharge.
 		private IEnumerator accumulateCharge() {
-			while (rubbing) {
+			while (canCharge && rubbing) {
 				accumulatedTime += Time.deltaTime;
-				accumulatedCharge = Mathf.Floor(chargePerUnitTime * accumulatedTime);
+				accumulatedCharge = Mathf.Floor(chargeAffinity * accumulatedTime * (protonDensity / (protonDensity + contactItem.protonDensity)));
 				yield return null;
 			}
 		}

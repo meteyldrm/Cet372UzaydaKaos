@@ -2,6 +2,9 @@
 // ReSharper disable file IdentifierTypo
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -28,11 +31,18 @@ namespace Control {
         private Rigidbody2D rb;
     
         private bool canDrag = true;
-        private bool dragging;
+
+        public bool dragging {
+            get;
+            private set;
+        }
         private Vector2 interceptOffset = Vector2.zero;
 
         private float lerpTime;
         private Vector2 screenVector;
+        private bool doAverageMomentum = true;
+        private Stack<float> averageVelocity = new Stack<float>();
+        private const float averagingWindow = 2f;
 
         private const float interceptRadius = 0.75f;
         private const float smoothingStrength = 0.3f;
@@ -131,6 +141,7 @@ namespace Control {
         private void doDrag(bool state) {
             if (state) {
                 dragging = true;
+                StartCoroutine(slidingWindowAverageVelocity());
             } else {
                 try {
                     rb.velocity = Vector2.zero;
@@ -140,6 +151,36 @@ namespace Control {
                 } catch (NullReferenceException) {
                 }
             }
+        }
+
+        // blankFrame was an attempt at ignoring the first N frames, since the draggable moves to reduce touch offset each frame.
+        private IEnumerator slidingWindowAverageVelocity() {
+            var time = 0f;
+            var blankFrame = 30;
+            while (time < averagingWindow) {
+                time += Time.deltaTime;
+                if (blankFrame <= 0) {
+                    averageVelocity.Push(rb.velocity.sqrMagnitude);
+                } else {
+                    blankFrame--;
+                    averageVelocity.Push(0);
+                }
+                yield return null;
+            }
+
+            while (doAverageMomentum && time >= averagingWindow) {
+                time += Time.deltaTime;
+                averageVelocity.Pop();
+                averageVelocity.Push(rb.velocity.sqrMagnitude);
+                yield return null;
+            }
+            yield return null;
+        }
+
+        public float calculateAverageVelocity() {
+            // slidingWindowAverageVelocity is responsible for generating the averageVelocity data.
+            // Reports 0 for all values under 0.5f. This was an attempt at distinguishing rubbing vs contact. The value might be too high.
+            return averageVelocity.Select(i => i > 0.5f ? i : 0f).Sum() / averageVelocity.Count;
         }
     }
 
