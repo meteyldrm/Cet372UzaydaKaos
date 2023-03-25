@@ -27,8 +27,9 @@ namespace Control {
     /// The draggable target might behave weirdly when on target. Assume satisfactory epsilon distance and disable the movement checks, after instantiation for example.
     /// Is a circle collider appropriate for every material? Playtest with ElectricSpecs accumulation is necessary.
     /// </summary>
-    public class Draggable : MonoBehaviour {
+    public class DraggableV2 : MonoBehaviour {
         private Rigidbody2D rb;
+        private Camera cam;
     
         private bool canDrag = true;
 
@@ -40,15 +41,10 @@ namespace Control {
 
         private float lerpTime;
         private Vector2 screenVector;
-        private bool doAverageMomentum = true;
-        private Stack<float> averageVelocity = new Stack<float>();
-        private Stack<Vector2> averagePosition = new Stack<Vector2>();
-        private const float averagingWindow = 2f;
-
-        private const float interceptRadius = 0.75f;
+        
         private const float smoothingStrength = 0.3f;
         private Collider2D selfCollider;
-        public colliderType colliderType;
+        public colliderTypeV2 colliderType;
     
         private void Awake() {
             var _rb = gameObject.GetComponent<Rigidbody2D>();
@@ -60,11 +56,11 @@ namespace Control {
                 _rb.gravityScale = 0f;
             }
             
-            if (_selfCollider == null && colliderType == colliderType.Circle) {
+            if (_selfCollider == null && colliderType == colliderTypeV2.Circle) {
                 _selfCollider = gameObject.AddComponent<CircleCollider2D>();
                 ((CircleCollider2D)_selfCollider).radius = 60f;
                 _selfCollider.isTrigger = true;
-            } else if (_selfCollider == null && colliderType == colliderType.Box) {
+            } else if (_selfCollider == null && colliderType == colliderTypeV2.Box) {
                 _selfCollider = gameObject.AddComponent<BoxCollider2D>();
                 ((BoxCollider2D)_selfCollider).size = new Vector2(70, 70);
                 ((BoxCollider2D)_selfCollider).edgeRadius = 0.15f;
@@ -73,9 +69,7 @@ namespace Control {
             
             rb = _rb;
             selfCollider = _selfCollider;
-        }
-
-        private void Start() {
+            cam = Camera.main;
         }
 
         private void OnDisable() {
@@ -92,46 +86,45 @@ namespace Control {
             }
         }
 
-        private void FixedUpdate() {
-            interceptOffset = Vector2.Lerp(interceptOffset, Vector2.zero, lerpTime);
-            lerpTime += Time.fixedDeltaTime / (smoothingStrength * 50);
-        }
-
-        private void Update() {
-            if (canDrag && dragging) {
-                rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * smoothingStrength * 10);
-            }
-        }
-
-        public bool interceptInput(Vector2 spaceVector) {
-            if (canDrag) {
-                return math.abs(Vector2.Distance(transform.position, spaceVector)) < interceptRadius;
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// Confirm input interception after interceptInput returns true (that this is the item being interacted with)
         /// </summary>
         /// <param name="state">start, end</param>
         /// <param name="spaceVector">I have no idea what this does. Investigate.</param>
         public void SetInteractionState(string state, Vector2 spaceVector) {
-            switch (state) {
-                case "start": {
-                    var position = (Vector2) transform.position;
-                    interceptOffset = spaceVector - position;
-                    screenVector = position - interceptOffset;
-                    doDrag(true);
-                    break;
-                }
-                case "end": {
-                    interceptOffset = spaceVector;
-                    screenVector = spaceVector;
-                    doDrag(false);
-                    break;
+            if (canDrag) {
+                switch (state) {
+                    case "start": {
+                        var position = (Vector2) transform.position;
+                        interceptOffset = spaceVector - position;
+                        screenVector = position - interceptOffset;
+                        doDrag(true);
+                        break;
+                    }
+                    case "end": {
+                        interceptOffset = spaceVector;
+                        screenVector = spaceVector;
+                        doDrag(false);
+                        break;
+                    }
                 }
             }
+        }
+
+        private void OnMouseDown() {
+            SetInteractionState("start", cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
+        }
+
+        private void OnMouseDrag() {
+            if (dragging) {
+                interceptOffset = Vector2.Lerp(interceptOffset, Vector2.zero, lerpTime);
+                lerpTime += Time.fixedDeltaTime / (smoothingStrength * 50);
+                rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * smoothingStrength * 10);
+            }
+        }
+
+        private void OnMouseUpAsButton() {
+            SetInteractionState("end", Vector2.zero);
         }
 
         public void SetTransformGoal(Vector2 goal) {
@@ -142,8 +135,6 @@ namespace Control {
         private void doDrag(bool state) {
             if (state) {
                 dragging = true;
-                // averageVelocity.Clear();
-                // StartCoroutine(slidingWindowAverageVelocity());
             } else {
                 try {
                     rb.velocity = Vector2.zero;
@@ -154,56 +145,9 @@ namespace Control {
                 }
             }
         }
-
-        // blankFrame was an attempt at ignoring the first N frames, since the draggable moves to reduce touch offset each frame.
-        private IEnumerator slidingWindowAverageVelocity() {
-            var time = 0f;
-            var blankFrame = 30;
-            while (time < averagingWindow) {
-                time += Time.deltaTime;
-                if (blankFrame <= 0) {
-                    averageVelocity.Push(rb.velocity.sqrMagnitude);
-                } else {
-                    blankFrame--;
-                    averageVelocity.Push(0);
-                }
-                yield return null;
-            }
-
-            while (doAverageMomentum && time >= averagingWindow) {
-                time += Time.deltaTime;
-                averageVelocity.Pop();
-                averageVelocity.Push(rb.velocity.sqrMagnitude);
-                yield return null;
-            }
-            yield return null;
-        }
-        
-        private IEnumerator slidingWindowAveragePosition() {
-            var time = 0f;
-            while (time < averagingWindow) {
-                time += Time.deltaTime;
-                averagePosition.Push(rb.position);
-                yield return null;
-            }
-
-            while (doAverageMomentum && time >= averagingWindow) {
-                time += Time.deltaTime;
-                averagePosition.Pop();
-                averagePosition.Push(rb.position);
-                yield return null;
-            }
-            yield return null;
-        }
-
-        public float calculateAverageVelocity() {
-            // slidingWindowAverageVelocity is responsible for generating the averageVelocity data.
-            // Reports 0 for all values under 0.5f. This was an attempt at distinguishing rubbing vs contact. The value might be too high.
-            return averageVelocity.Select(i => i > 0.5f ? i : 0f).Sum() / averageVelocity.Count;
-        }
     }
 
-    public enum colliderType {
+    public enum colliderTypeV2 {
         Circle,
         Box
     }

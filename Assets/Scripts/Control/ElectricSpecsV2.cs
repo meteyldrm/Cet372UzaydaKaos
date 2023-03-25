@@ -13,7 +13,7 @@ namespace Control {
 	/// electron_density = proton_density - accumulatedCharge
 	/// TODO: Introduce a canCharge field.
 	/// </summary>
-	public class ElectricSpecs : MonoBehaviour {
+	public class ElectricSpecsV2 : MonoBehaviour {
 		public int materialID; //The ID of the material. This is the pseudo-serialization script for cross-consumer compatibility so bind it to a prefab for init.
 		public string materialName; //Name to be displayed on screen
 
@@ -32,13 +32,13 @@ namespace Control {
 		public float accumulatedCharge;
 		private bool rubbing;
 		private int rubbingInstanceID;
-		private ElectricSpecs contactItem;
+		private ElectricSpecsV2 contactItem;
 		
 		[NonSerialized] public bool canRub;
 		[NonSerialized] public bool canContact;
 
 		private Rigidbody2D rb;
-		private Draggable drag;
+		private DraggableV2 drag;
 
 		private Coroutine accumulationCoroutine = null;
 		private Coroutine rubbingTriggerCoroutine = null;
@@ -46,7 +46,7 @@ namespace Control {
 
 		private void Start() {
 			rb = GetComponent<Rigidbody2D>();
-			drag = GetComponent<Draggable>();
+			drag = GetComponent<DraggableV2>();
 		}
 
 		/// <summary>
@@ -56,7 +56,7 @@ namespace Control {
 		/// <param name="col"></param>
 		private void OnTriggerEnter2D(Collider2D col) {
 			if (canCharge) {
-				if (col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
+				if (col.gameObject.TryGetComponent(out ElectricSpecsV2 specs)) {
 					if (specs.canContact) {
 						chargingTriggerCoroutine = StartCoroutine(invokeChargingWithDelay(specs));
 					}
@@ -88,7 +88,7 @@ namespace Control {
 		/// One object would be stationary, the other would be moving. Ensure that both are executing the same functions. Make the one with active Draggable initiate.
 		/// </summary>
 		/// <param name="specs"></param>
-		private void OnStartRubbing(ElectricSpecs specs) {
+		private void OnStartRubbing(ElectricSpecsV2 specs) {
 			if (canCharge) {
 				contactItem = specs;
 				rubbingInstanceID = specs.gameObject.GetInstanceID();
@@ -123,19 +123,19 @@ namespace Control {
 		/// The distribution is based on proton counts. This should be coupled more closely with the charge particles. Introduce "proton" and "electron" fields.
 		/// </summary>
 		/// <param name="specs"></param>
-		private void DoContactCharging(ElectricSpecs specs) {
+		private void DoContactCharging(ElectricSpecsV2 specs) {
 			if (canCharge && canContact && specs.canCharge && specs.canContact) {
 				accumulatedCharge = (electronDensity + specs.electronDensity) / (protonDensity / (protonDensity + specs.protonDensity));
 				specs.accumulatedCharge = (electronDensity + specs.electronDensity) / (specs.protonDensity / (protonDensity + specs.protonDensity));
 			}
 		}
 		
-		private IEnumerator invokeChargingWithDelay(ElectricSpecs material) {
+		private IEnumerator invokeChargingWithDelay(ElectricSpecsV2 material) {
 			yield return new WaitForSeconds(1f);
 			DoContactCharging(material);
 		}
 
-		private IEnumerator invokeRubbingWithDelay(ElectricSpecs material) {
+		private IEnumerator invokeRubbingWithDelay(ElectricSpecsV2 material) {
 			yield return new WaitForSeconds(1f);
 			rubbing = true;
 			OnStartRubbing(material);
