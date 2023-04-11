@@ -1,0 +1,10 @@
+﻿This is the combination of triboelectric series and volume "proton" distribution
+
+Name - Charge Affinity - Proton Density
+
+Boot -1 4
+Glass 2 5
+Cotton 0 2
+Foam 3 2
+Steel 0 5
+Polyester -2 3

@@ -2,15 +2,12 @@
 // ReSharper disable file IdentifierTypo
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
 
 // Modified from https://github.com/meteyldrm/CET49A-BasketballAir/blob/master/Assets/Scripts/Draggable.cs
 
-namespace Control {
+namespace Objects {
     /// <summary>
     /// The class needs to perform draggable duties as well as drop-and-snap functionality.
     /// To facilitate this, a trigger overlap architecture will be used which will utilize snap targets.
@@ -27,16 +24,13 @@ namespace Control {
     /// The draggable target might behave weirdly when on target. Assume satisfactory epsilon distance and disable the movement checks, after instantiation for example.
     /// Is a circle collider appropriate for every material? Playtest with ElectricSpecs accumulation is necessary.
     /// </summary>
-    public class DraggableV2 : MonoBehaviour {
+    public class Draggable : MonoBehaviour {
         private Rigidbody2D rb;
         private Camera cam;
     
         private bool canDrag = true;
 
-        public bool dragging {
-            get;
-            private set;
-        }
+        public bool dragging;
         private Vector2 interceptOffset = Vector2.zero;
 
         private float lerpTime;
@@ -91,17 +85,17 @@ namespace Control {
         /// </summary>
         /// <param name="state">start, end</param>
         /// <param name="spaceVector">I have no idea what this does. Investigate.</param>
-        public void SetInteractionState(string state, Vector2 spaceVector) {
+        private void SetInteractionState(bool state, Vector2 spaceVector) {
             if (canDrag) {
                 switch (state) {
-                    case "start": {
+                    case true: {
                         var position = (Vector2) transform.position;
                         interceptOffset = spaceVector - position;
                         screenVector = position - interceptOffset;
                         doDrag(true);
                         break;
                     }
-                    case "end": {
+                    case false: {
                         interceptOffset = spaceVector;
                         screenVector = spaceVector;
                         doDrag(false);
@@ -109,25 +103,34 @@ namespace Control {
                     }
                 }
             }
+
+            if (dragging && !state) {
+                interceptOffset = spaceVector;
+                screenVector = spaceVector;
+                doDrag(false);
+            }
         }
 
         private void OnMouseDown() {
-            SetInteractionState("start", cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
+            SetInteractionState(true, cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
         }
 
         private void OnMouseDrag() {
             if (dragging) {
+                SetTransformGoal(cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
                 interceptOffset = Vector2.Lerp(interceptOffset, Vector2.zero, lerpTime);
                 lerpTime += Time.fixedDeltaTime / (smoothingStrength * 50);
                 rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * smoothingStrength * 10);
             }
         }
 
-        private void OnMouseUpAsButton() {
-            SetInteractionState("end", Vector2.zero);
+        private void OnMouseUp() {
+            if (dragging) {
+                SetInteractionState(false, Vector2.zero);
+            }
         }
 
-        public void SetTransformGoal(Vector2 goal) {
+        private void SetTransformGoal(Vector2 goal) {
             screenVector = goal - interceptOffset;
         }
 

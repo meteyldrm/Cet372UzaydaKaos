@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Control;
+using Objects;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,7 +27,6 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 
 	public void LoadNextScene() {
 		sceneIndex++;
-		cameraRegistered = false;
 		if (scenes.Count <= sceneIndex) {
 			SceneManager.LoadScene(scenes[sceneIndex]);
 		}
@@ -75,83 +74,11 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 
 	/// <summary>
 	/// 3 dimensional array supporting the material report. 
-	/// [Row, Index, Iteration] = "IntSeconds | materialID". 
+	/// [Row, Index, Iteration] = "AccumulatedCharge | ReportedCharge | IntSeconds | ReportedSeconds | MaterialID | ConjugateMaterialID". 
 	/// Iteration != 0 is used for the expanded report. Copy values, leave seconds empty.
 	/// </summary>
-	[Tooltip("Utilize the string as \"Vector3 ; IntSeconds | materialID\"")]
 	[SerializeField] private List<string> materialReportInitializationList;
 	public string[,,] materialReportArray = new string[3,2,2];
-	#endregion
-
-	#region Draggable Intercept
-	private bool dragPause;
-	private bool dragDeadlock;
-	private Draggable draggingObject;
-	private Camera cam;
-	private bool cameraRegistered;
-	
-	public IDraggableController DraggableController;
-	private bool isClicking;
-
-	/// <summary>
-	/// Draggable intercept depends on the canDrag attribute of the draggable. Make sure they're bound to their respective controllers (report items' values will be set to false).
-	/// If the report draggable intercepts the touch while 
-	/// </summary>
-	private void DoDraggableIntercept() {
-		if (dragPause) return;
-
-		var spaceVector = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z)));
-
-		if(Input.GetKeyDown(KeyCode.Mouse0)) {
-			isClicking = true;
-			
-			if (DraggableController != null) {
-				var draggables = DraggableController.getDraggables();
-				if (draggables != null && draggables.Count > 0) {
-					foreach (var go in draggables) {
-						if (!dragDeadlock) {
-							if (!go.activeSelf) {
-								continue;
-							}
-
-							draggingObject = go.GetComponent<Draggable>();
-							dragDeadlock = draggingObject.interceptInput(spaceVector);
-							if (dragDeadlock) {
-								draggingObject.SetInteractionState("start", spaceVector);
-							}
-						} else {
-							break;
-						}
-					}
-				}
-			}
-		}
-		
-		if (Input.GetKey(KeyCode.Mouse0)) {
-			if (isClicking) {
-				try {
-					draggingObject.SetTransformGoal(spaceVector);
-				} catch(NullReferenceException) {
-				}
-			}
-		}
-
-		if (Input.GetKeyUp(KeyCode.Mouse0)) {
-			isClicking = false;
-			dragDeadlock = false;
-			draggingObject.SetInteractionState("end", Vector2.zero);
-			draggingObject = null;
-		}
-	}
-	
-	public void registerCamera(Camera _camera) {
-		cam = _camera;
-		cameraRegistered = true;
-	}
-
-	public interface IDraggableController {
-		List<GameObject> getDraggables();
-	}
 	#endregion
 
 	private void Start() {
@@ -165,9 +92,51 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		}
 	}
 
-	private void Update() {
-		if (cameraRegistered) {
-			DoDraggableIntercept();
+	/// <summary>
+	/// This is called by both the actively rubbed object and the passively rubbed object. The active object will report the ID of the passive object, therefore a comparison can be made.
+	/// </summary>
+	/// <param name="specs"></param>
+	/// <param name="row"></param>
+	/// <param name="index"></param>
+	/// <param name="iteration"></param>
+	public void AddSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		if (specs.isActiveObject) {
+			AddActiveSpecsToReport(specs, row, index, iteration);
+		} else {
+			AddPassiveSpecsToReport(specs, row, index, iteration);
 		}
+	}
+	
+	private void AddActiveSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		SerializeSpecsToReport(specs, row, index, iteration);
+		var array = materialReportArray[row, index, iteration].Split("|");
+		array[5] = specs.conjugateItem.materialID.ToString();
+		materialReportArray[row, index, iteration] = string.Join("|", array);
+	}
+
+	private int AddPassiveSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		if (ComparePassiveToActive(specs, row, index, iteration)) {
+			SerializeSpecsToReport(specs, row, index, iteration);
+			return 0;
+		}
+
+		return 1;
+	}
+
+	// private int CompareChargeToActual(int charge, int row = 0, int index = 0, int iteration = 0) {
+	// 	var array = materialReportArray[row, index, iteration].Split("|");
+	// 	if(charge == array[])
+	// }
+
+	//Passive is index 1, active is index 0
+	private bool ComparePassiveToActive(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		var array = materialReportArray[row, 0, iteration].Split("|");
+		return specs.materialID == int.Parse(array[5]);
+	}
+
+
+	// [Row, Index, Iteration] = "AccumulatedCharge | ReportedCharge | IntSeconds | ReportedSeconds | MaterialID | ConjugateMaterialID". 
+	private void SerializeSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.getEffectiveCharge()}|{specs.accumulatedTime}||{specs.materialID}|";
 	}
 }

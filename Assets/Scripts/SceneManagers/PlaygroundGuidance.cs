@@ -1,23 +1,24 @@
 using System.Collections.Generic;
-using Control;
+using Objects;
 using TMPro;
 using UnityEngine;
 
 namespace SceneManagers {
-    public class PlaygroundGuidance : MonoBehaviour, GeneralGuidance.IDraggableController {
-        public Camera cam;
+    public class PlaygroundGuidance : MonoBehaviour {
         public GameObject draggable;
+        public ElectricSpecs draggableSpecs;
         public GameObject chargeText;
+        private TMP_Text cText;
         
         // Start is called before the first frame update
         private void Start() {
-            GeneralGuidance.Instance.DraggableController = this;
-            GeneralGuidance.Instance.registerCamera(cam);
+            draggableSpecs = draggable.GetComponent<ElectricSpecs>();
+            cText = chargeText.GetComponent<TMP_Text>();
         }
 
         // Update is called once per frame
         private void Update() {
-            chargeText.GetComponent<TMP_Text>().text = $"Boot charge: {draggable.GetComponent<ElectricSpecs>().accumulatedCharge}";
+            cText.text = $"Boot charge: {draggableSpecs.getEffectiveCharge()}";
         }
 
         public List<GameObject> getDraggables() {
@@ -28,7 +29,7 @@ namespace SceneManagers {
             foreach (var obj in GeneralGuidance.GetAllSceneComponents<ElectricSpecs>()) {
                 obj.OnResetRubbing();
             }
-            chargeText.GetComponent<TMP_Text>().text = "Boot charge: 0";
+            cText.text = "Boot charge: 0";
         }
     }
 }
