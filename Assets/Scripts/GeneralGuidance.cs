@@ -115,17 +115,15 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// <param name="iteration"></param>
 	/// <returns></returns>
 	private bool SerializeSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		if (wasFoundInCurrentIteration(specs.materialID, iteration)) { // What if the func returns false
-			deleteFromCurrentIteration(specs.materialID, iteration);
-		}
 		if (materialReportArray[row, 0 == index ? 1 : 0, iteration] != null && materialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
 			var str = materialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
-			if (str != "" && str == $"{specs.materialID}") {
-				materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
-				return true;
+			if (str == "" || str != $"{specs.materialID}") {
+				return false;
 			}
-
-			return false;
+		}
+		
+		if (wasFoundInCurrentIteration(specs.materialID, iteration)) {
+			deleteFromCurrentIteration(specs.materialID, iteration);
 		}
 		
 		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
