@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Objects;
-using Unity.Mathematics;
+using Reports;
+using UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Utility;
@@ -24,6 +24,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	};
 
 	private int sceneIndex;
+	public ReportManager report;
+	public AlertController alert;
 
 	public void LoadNextScene() {
 		sceneIndex++;
@@ -77,7 +79,7 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// [Row, Index, Iteration] = "AccumulatedCharge | ReportedCharge | IntSeconds | ReportedSeconds | MaterialID | ConjugateMaterialID". 
 	/// Iteration != 0 is used for the expanded report. Copy values, leave seconds empty.
 	/// </summary>
-	[SerializeField] private List<string> materialReportInitializationList;
+	[SerializeField] private List<string> materialReportInitializationList = new();
 	public string[,,] materialReportArray = new string[3,2,2];
 	#endregion
 
@@ -93,50 +95,69 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	}
 
 	/// <summary>
-	/// This is called by both the actively rubbed object and the passively rubbed object. The active object will report the ID of the passive object, therefore a comparison can be made.
+	/// Returns false if the conjugate ID doesn't match
 	/// </summary>
 	/// <param name="specs"></param>
 	/// <param name="row"></param>
 	/// <param name="index"></param>
 	/// <param name="iteration"></param>
-	public void AddSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		if (specs.isActiveObject) {
-			AddActiveSpecsToReport(specs, row, index, iteration);
-		} else {
-			AddPassiveSpecsToReport(specs, row, index, iteration);
-		}
+	public bool AddSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		return SerializeSpecsToReport(specs, row, index, iteration);
 	}
 	
-	private void AddActiveSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		SerializeSpecsToReport(specs, row, index, iteration);
-		var array = materialReportArray[row, index, iteration].Split("|");
-		array[5] = specs.conjugateItem.materialID.ToString();
-		materialReportArray[row, index, iteration] = string.Join("|", array);
+	/// <summary>
+	/// [Row, Index, Iteration] = "AccumulatedCharge | ReportedCharge | IntSeconds | ReportedSeconds | MaterialID | ConjugateMaterialID".
+	/// The ternary checks for conjugate mismatch.
+	/// </summary>
+	/// <param name="specs"></param>
+	/// <param name="row"></param>
+	/// <param name="index"></param>
+	/// <param name="iteration"></param>
+	/// <returns></returns>
+	private bool SerializeSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
+		if (wasFoundInCurrentIteration(specs.materialID, iteration)) { // What if the func returns false
+			deleteFromCurrentIteration(specs.materialID, iteration);
+		}
+		if (materialReportArray[row, 0 == index ? 1 : 0, iteration] != null && materialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
+			var str = materialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
+			if (str != "" && str == $"{specs.materialID}") {
+				materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
+				return true;
+			}
+
+			return false;
+		}
+		
+		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
+		return true;
 	}
 
-	private int AddPassiveSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		if (ComparePassiveToActive(specs, row, index, iteration)) {
-			SerializeSpecsToReport(specs, row, index, iteration);
-			return 0;
+	public GameObject SpawnObjectFromReport(int row = 0, int index = 0, int iteration = 0) {
+		return null;
+	}
+
+	#region Report Control
+	private void deleteFromCurrentIteration(int id, int iteration) {
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 2; j++) {
+				if (materialReportArray[i, j, iteration] != null && materialReportArray[i, j, iteration] != string.Empty && materialReportArray[i, j, iteration].Split("|")[5] == $"{id}") {
+					materialReportArray[i, j, iteration] = string.Empty;
+				}
+			}
+		}
+	}
+
+	private bool wasFoundInCurrentIteration(int id, int iteration) {
+		bool x = false;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 2; j++) {
+				if (materialReportArray[i, j, iteration] != null && materialReportArray[i, j, iteration] != string.Empty) {
+					if(materialReportArray[i, j, iteration].Split("|")[5] == $"{id}") x = true;
+				}
+			}
 		}
 
-		return 1;
+		return x;
 	}
-
-	// private int CompareChargeToActual(int charge, int row = 0, int index = 0, int iteration = 0) {
-	// 	var array = materialReportArray[row, index, iteration].Split("|");
-	// 	if(charge == array[])
-	// }
-
-	//Passive is index 1, active is index 0
-	private bool ComparePassiveToActive(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		var array = materialReportArray[row, 0, iteration].Split("|");
-		return specs.materialID == int.Parse(array[5]);
-	}
-
-
-	// [Row, Index, Iteration] = "AccumulatedCharge | ReportedCharge | IntSeconds | ReportedSeconds | MaterialID | ConjugateMaterialID". 
-	private void SerializeSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.getEffectiveCharge()}|{specs.accumulatedTime}||{specs.materialID}|";
-	}
+	#endregion
 }

@@ -27,10 +27,12 @@ namespace Objects {
     public class Draggable : MonoBehaviour {
         private Rigidbody2D rb;
         private Camera cam;
+        private GameObject reportCollider;
     
         private bool canDrag = true;
 
         public bool dragging;
+        public Vector2 dragStartPosition;
         private Vector2 interceptOffset = Vector2.zero;
 
         private float lerpTime;
@@ -126,7 +128,29 @@ namespace Objects {
 
         private void OnMouseUp() {
             if (dragging) {
-                SetInteractionState(false, Vector2.zero);
+                if (reportCollider != null) {
+                    SetInteractionState(false, Vector2.zero);
+                    rb.position = reportCollider.transform.position;
+                    if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
+                        if (!GeneralGuidance.Instance.report.OnSnap(specs, reportCollider.name, reportCollider.transform.parent.name)) {
+                            specs.resetRubbingPosition();
+                        }
+                    }
+                } else {
+                    SetInteractionState(false, Vector2.zero);
+                }
+            }
+        }
+
+        private void OnTriggerEnter2D(Collider2D col) {
+            if (col.CompareTag("ReportCollider")) {
+                reportCollider = col.gameObject;
+            }
+        }
+
+        private void OnTriggerExit2D(Collider2D col) {
+            if (col.CompareTag("ReportCollider")) {
+                reportCollider = null;
             }
         }
 
@@ -138,6 +162,7 @@ namespace Objects {
         private void doDrag(bool state) {
             if (state) {
                 dragging = true;
+                dragStartPosition = rb.position;
             } else {
                 try {
                     rb.velocity = Vector2.zero;

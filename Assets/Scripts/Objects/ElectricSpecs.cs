@@ -25,12 +25,12 @@ namespace Objects {
 		/// </summary>
 		[Tooltip("Divide Exp1 value by 5 (seconds)")] public float chargeAffinity;
 		[Tooltip("The number of protons the object will display")] public float protonDensity = 3;
-		[NonSerialized] public float electronDensity;
+		public float electronDensity;
 		
 		public float accumulatedTime;
 		private bool rubbing;
-		private int rubbingMaterialID;
-		[NonSerialized] public ElectricSpecs conjugateItem;
+		public int rubbingMaterialID;
+		[NonSerialized] public ElectricSpecs conjugateItem = null;
 		[NonSerialized] public bool isActiveObject;
 		
 		public bool canCharge = true;
@@ -49,7 +49,9 @@ namespace Objects {
 		private void Start() {
 			rb = GetComponent<Rigidbody2D>();
 			drag = GetComponent<Draggable>();
-			electronDensity = protonDensity;
+			if (electronDensity == 0) {
+				electronDensity = protonDensity;
+			}
 		}
 
 		private void Update() {
@@ -65,11 +67,12 @@ namespace Objects {
 					} else {
 						timeDelta = 0f;
 						limit--;
-						electronDensity += Mathf.Sign(chargeAffinity);
-						conjugateItem.electronDensity += Mathf.Sign(conjugateItem.chargeAffinity);
+						electronDensity -= Mathf.Sign(chargeAffinity);
+						conjugateItem.electronDensity -= Mathf.Sign(conjugateItem.chargeAffinity);
 					}
 
 					accumulatedTime += Time.deltaTime;
+					conjugateItem.accumulatedTime += Time.deltaTime;
 				}
 
 				bool x() {
@@ -84,6 +87,7 @@ namespace Objects {
 		/// </summary>
 		/// <param name="col"></param>
 		private void OnTriggerEnter2D(Collider2D col) {
+			if (col.CompareTag("ReportCollider")) return;
 			isActiveObject = drag.dragging;
 			if (isActiveObject) {
 				if (col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
@@ -105,7 +109,6 @@ namespace Objects {
 						}
 					
 						if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
-							conjugateItem = specs;
 							rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
 						}
 					} else if (hasElectrostaticForce) {
@@ -120,7 +123,7 @@ namespace Objects {
 		private void OnTriggerExit2D(Collider2D other) {
 			if (isActiveObject) {
 				triggerIntercept = false;
-				StartCoroutine(lateTriggerRemove(0.5f));
+				StartCoroutine(lateTriggerRemove(0.2f));
 			}
 
 			IEnumerator lateTriggerRemove(float time) {
@@ -158,17 +161,19 @@ namespace Objects {
 			if (canCharge) {
 				if (conjugateItem != specs) {
 					conjugateItem = specs;
+					specs.conjugateItem = this;
+					specs.rubbingMaterialID = materialID;
 					rubbingMaterialID = specs.materialID;
 					accumulatedTime = 0;
+					conjugateItem.accumulatedTime = 0;
 				}
 			}
 		}
 
 		private void OnStopRubbing(ElectricSpecs specs) {
 			rubbing = false;
-			isActiveObject = false;
-			rubbingMaterialID = -1;
 			didOnceForRubbing = false;
+			specs.accumulatedTime = accumulatedTime;
 		}
 		
 		public void OnResetRubbing() {
@@ -187,11 +192,13 @@ namespace Objects {
 		/// <param name="specs"></param>
 		/// <param name="chargeOverride"></param>
 		private void DoContactCharging(ElectricSpecs specs, bool chargeOverride = false) {
-			if (isActiveObject && canCharge && specs.canCharge && ((canContact && specs.canContact) || chargeOverride)){
+			if (isActiveObject && canCharge && specs.canCharge && ((canContact && specs.canContact) || chargeOverride)) {
 				//Individual proton count does not affect accumulated charge. It's only to determine the neutral point of the material.
 				//Delta = (1-(total ED/total PD)) * sign * (avgAffinity)
-				electronDensity = (1 - (electronDensity + specs.electronDensity) / (protonDensity + specs.protonDensity)) * Mathf.Sign(chargeAffinity) * (Mathf.Abs(chargeAffinity) + Mathf.Abs(specs.chargeAffinity));
-				specs.electronDensity = specs.protonDensity - (protonDensity - electronDensity);
+				var delta = Mathf.Floor((getEffectiveCharge() + specs.getEffectiveCharge())/2);
+				var conjugateDelta = Mathf.Ceil((getEffectiveCharge() + specs.getEffectiveCharge())/2);
+				electronDensity = protonDensity - delta;
+				specs.electronDensity = specs.protonDensity - conjugateDelta;
 			}
 		}
 		
@@ -211,15 +218,23 @@ namespace Objects {
 		private float timeLimit;
 		private void doOnceForRubbing() {
 			if (!didOnceForRubbing) {
+				rubbingMaterialID = conjugateItem.materialID;
+				conjugateItem.rubbingMaterialID = materialID;
+				
+				DoContactCharging(conjugateItem);
 				didOnceForRubbing = true;
 				if (chargeAffinity > 0) {
 					limit = electronDensity - 1;
-				} else {
+				} else if (conjugateItem.chargeAffinity > 0) {
 					limit = conjugateItem.electronDensity - 1;
 				}
 				timeDelta = 0f;
-				timeLimit = 10f / (Mathf.Abs(chargeAffinity) + Mathf.Abs(conjugateItem.chargeAffinity));
+				timeLimit = 5f / (Mathf.Abs(chargeAffinity) + Mathf.Abs(conjugateItem.chargeAffinity));
 			}
+		}
+
+		public void resetRubbingPosition() {
+			rb.position = drag.dragStartPosition;
 		}
 
 		public float getEffectiveCharge() {
