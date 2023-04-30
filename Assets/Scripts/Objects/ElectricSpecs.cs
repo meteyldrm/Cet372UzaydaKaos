@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections;
+using Reports;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Objects {
@@ -40,6 +42,7 @@ namespace Objects {
 
 		private Rigidbody2D rb;
 		private Draggable drag;
+		private bool configured;
 
 		private Coroutine rubbingTriggerCoroutine = null;
 		private Coroutine chargingTriggerCoroutine = null;
@@ -47,16 +50,32 @@ namespace Objects {
 		private bool triggerInterceptLate = false;
 
 		private void Start() {
+			if (configured) return;
 			rb = GetComponent<Rigidbody2D>();
 			drag = GetComponent<Draggable>();
 			if (electronDensity == 0) {
 				electronDensity = protonDensity;
 			}
+
+			configured = true;
+		}
+
+		private void OnEnable() {
+			if (configured) return;
+			rb = GetComponent<Rigidbody2D>();
+			drag = GetComponent<Draggable>();
+			if (electronDensity == 0) {
+				electronDensity = protonDensity;
+			}
+
+			configured = true;
 		}
 
 		private void Update() {
 			if (rubbing) {
-				doOnceForRubbing();
+				if (accumulatedTime < 0.1) {
+					doOnceForRubbing();
+				}
 				if (canCharge && triggerInterceptLate && isActiveObject && limit > 0) {
 					if (!x()) {
 						return; //Low velocity rubbing unresponsive
@@ -88,20 +107,10 @@ namespace Objects {
 		/// <param name="col"></param>
 		private void OnTriggerEnter2D(Collider2D col) {
 			if (col.CompareTag("ReportCollider")) return;
-			isActiveObject = drag.dragging;
+			isActiveObject = drag != null && drag.dragging;
 			if (isActiveObject) {
 				if (col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
 					if (canCharge) {
-						#region Debug
-						if (!(canRub ^ canContact)) {
-							Debug.LogWarning("Both canRub and canContact share the same state for this object, indeterminate behavior!", gameObject);
-						}
-					
-						if (!(specs.canRub ^ specs.canContact)) {
-							Debug.LogWarning("Both canRub and canContact share the same state for this object, indeterminate behavior!", specs.gameObject);
-						}
-						#endregion
-
 						triggerIntercept = true;
 						triggerInterceptLate = true;
 						if (canContact && specs.canContact) {
@@ -121,13 +130,16 @@ namespace Objects {
 		}
 
 		private void OnTriggerExit2D(Collider2D other) {
+			if (other.CompareTag("ReportCollider")) {
+				GeneralGuidance.Instance.report.OnLeaveReport(materialID);
+			}
 			if (isActiveObject) {
 				triggerIntercept = false;
 				StartCoroutine(lateTriggerRemove(0.2f));
 			}
 
 			IEnumerator lateTriggerRemove(float time) {
-				yield return new WaitForSecondsRealtime(time);
+				yield return new WaitForSeconds(time);
 				if (!triggerIntercept) {
 					triggerInterceptLate = false;
 				} else {
@@ -199,16 +211,29 @@ namespace Objects {
 				var conjugateDelta = Mathf.Ceil((getEffectiveCharge() + specs.getEffectiveCharge())/2);
 				electronDensity = protonDensity - delta;
 				specs.electronDensity = specs.protonDensity - conjugateDelta;
+				if (specs.TryGetComponent(out Lightbulb bulb)) {
+					if (conjugateDelta is > 0 or < 0 || delta is > 0 or < 0) {
+						bulb.LightUp();
+					}
+				}
 			}
 		}
 		
 		private IEnumerator invokeChargingWithDelay(ElectricSpecs material) {
-			yield return new WaitForSecondsRealtime(1f);
+			if (material.TryGetComponent(out Lightbulb bulb)) {
+				yield return new WaitForSeconds(0.6f);
+			} else {
+				yield return new WaitForSeconds(1.2f);
+			}
 			if (triggerIntercept) DoContactCharging(material);
 		}
 
 		private IEnumerator invokeRubbingWithDelay(ElectricSpecs material) {
-			yield return new WaitForSecondsRealtime(1f);
+			if (accumulatedTime > 0) {
+				yield return new WaitForSeconds(2f);
+			} else {
+				yield return new WaitForSeconds(1f);
+			}
 			if (triggerIntercept) OnStartRubbing(material);
 		}
 
@@ -221,7 +246,7 @@ namespace Objects {
 				rubbingMaterialID = conjugateItem.materialID;
 				conjugateItem.rubbingMaterialID = materialID;
 				
-				DoContactCharging(conjugateItem);
+				DoContactCharging(conjugateItem, true);
 				didOnceForRubbing = true;
 				if (chargeAffinity > 0) {
 					limit = electronDensity - 1;
@@ -234,6 +259,16 @@ namespace Objects {
 		}
 
 		public void resetRubbingPosition() {
+			if (!configured) {
+				rb = GetComponent<Rigidbody2D>();
+				drag = GetComponent<Draggable>();
+				if (electronDensity == 0) {
+					electronDensity = protonDensity;
+				}
+
+				configured = true;
+			}
+			
 			rb.position = drag.dragStartPosition;
 		}
 

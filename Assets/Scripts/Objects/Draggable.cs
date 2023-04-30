@@ -3,6 +3,7 @@
 
 using System;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 
 // Modified from https://github.com/meteyldrm/CET49A-BasketballAir/blob/master/Assets/Scripts/Draggable.cs
@@ -29,9 +30,10 @@ namespace Objects {
         private Camera cam;
         private GameObject reportCollider;
     
-        private bool canDrag = true;
+        public bool canDrag = true;
 
         public bool dragging;
+        private Vector2 guidanceStartPosition;
         public Vector2 dragStartPosition;
         private Vector2 interceptOffset = Vector2.zero;
 
@@ -66,6 +68,7 @@ namespace Objects {
             rb = _rb;
             selfCollider = _selfCollider;
             cam = Camera.main;
+            guidanceStartPosition = rb.position;
         }
 
         private void OnDisable() {
@@ -129,12 +132,22 @@ namespace Objects {
         private void OnMouseUp() {
             if (dragging) {
                 if (reportCollider != null) {
-                    SetInteractionState(false, Vector2.zero);
-                    rb.position = reportCollider.transform.position;
                     if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
                         if (!GeneralGuidance.Instance.report.OnSnap(specs, reportCollider.name, reportCollider.transform.parent.name)) {
+                            SetInteractionState(false, Vector2.zero);
                             specs.resetRubbingPosition();
+                            return;
                         }
+                        SetInteractionState(false, Vector2.zero);
+                        transform.SetParent(GeneralGuidance.Instance.report.gameObject.transform, true);
+                        transform.position = reportCollider.transform.position;
+                        canDrag = false;
+                        var obj = Instantiate(GeneralGuidance.Instance.MaterialPrefabList[specs.materialID], GeneralGuidance.GetSceneGameObjectByName("Materials", 2).transform);
+                        obj.transform.position = guidanceStartPosition;
+                        var componentSpecs = obj.GetComponent<ElectricSpecs>();
+                        componentSpecs.canCharge = true;
+                        componentSpecs.canRub = true;
+                        componentSpecs.canContact = true;
                     }
                 } else {
                     SetInteractionState(false, Vector2.zero);
@@ -145,12 +158,14 @@ namespace Objects {
         private void OnTriggerEnter2D(Collider2D col) {
             if (col.CompareTag("ReportCollider")) {
                 reportCollider = col.gameObject;
+                gameObject.transform.GetChild(0).gameObject.SetActive(false);
             }
         }
 
         private void OnTriggerExit2D(Collider2D col) {
             if (col.CompareTag("ReportCollider")) {
                 reportCollider = null;
+                gameObject.transform.GetChild(0).gameObject.SetActive(true);
             }
         }
 
