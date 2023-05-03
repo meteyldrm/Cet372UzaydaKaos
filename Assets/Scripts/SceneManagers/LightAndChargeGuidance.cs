@@ -55,7 +55,7 @@ namespace SceneManagers {
             "A_Hangi objelerin birbiriyle etkileşime geçtiğini bildiğimiz için topladığım yığından kurtulabiliriz.\n\nOnların yerine merceği koyalım. Raporu açar mısın?",
             "A_Objeleri, rapordan merceğe sürükleyerek görüntüleyebilirsin.\n\nİstemediğin bir şey yaparsan veya objeleri silmek istersen, merceğin sağ altındaki çöp butonuna tıklayabilirsin. İlk satırdaki objeleri görüntüler misin?",
             "A_Objelerin üzerinde bir şeyler görüyoruz. Bakalım bunlar, objeleri sürtünce nasıl değişecek.\n\nSana bir de kronometre veriyorum. Kronometre butonuna tıklar mısın?",
-            "A_Bu kronometre ile sürtme süremizi ölçeceğiz. Yaşanan problemleri daha bilimsel olarak raporlamalıyız.\n\nSüreyi ben tutacağım, kronometreyi başlatma veya durdurma gibi bir uğraşın olmayacak. Deneyi yaparken süreye dikkat etsen yeter.\n\nİki objeyi birbirine 5 saniye kadar sürterek gözlem yapalım."
+            "A_Bu kronometre ile sürtme süremizi ölçeceğiz. Yaşanan problemleri daha bilimsel bir şekilde raporlamalıyız.\n\nSüreyi ben tutacağım, kronometreyi başlatma veya durdurma gibi bir uğraşın olmayacak. Deneyi yaparken süreye dikkat etsen yeter.\n\nİki objeyi birbirine 5 saniye kadar sürterek gözlem yapalım."
         };
 
         public void PrevDialogue() {
