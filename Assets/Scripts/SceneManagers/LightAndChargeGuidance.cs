@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using Objects;
-using Reports;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -117,6 +115,7 @@ namespace SceneManagers {
                     APA.SetActive(false);
                     Light.SetActive(true);
                     NavigationArrows.SetActive(false);
+                    GeneralGuidance.Instance.allowDrag = true;
                 }
 
                 if (dialogue.StartsWith("Ampul yandı! ")) {

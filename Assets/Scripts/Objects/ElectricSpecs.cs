@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections;
-using Reports;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Objects {
@@ -44,10 +42,8 @@ namespace Objects {
 		private Draggable drag;
 		private bool configured;
 
-		private Coroutine rubbingTriggerCoroutine = null;
 		private Coroutine chargingTriggerCoroutine = null;
 		private bool triggerIntercept = false;
-		private bool triggerInterceptLate = false;
 
 		private void Start() {
 			if (configured) return;
@@ -72,32 +68,32 @@ namespace Objects {
 		}
 
 		private void Update() {
-			if (rubbing) {
-				if (accumulatedTime < 0.1) {
-					doOnceForRubbing();
-				}
-				if (canCharge && triggerInterceptLate && isActiveObject && limit > 0) {
-					if (!x()) {
-						return; //Low velocity rubbing unresponsive
-					}
-					
-					if(timeDelta < timeLimit) {
-						timeDelta += Time.deltaTime;
-					} else {
-						timeDelta = 0f;
-						limit--;
-						electronDensity -= Mathf.Sign(chargeAffinity);
-						conjugateItem.electronDensity -= Mathf.Sign(conjugateItem.chargeAffinity);
-					}
-
-					accumulatedTime += Time.deltaTime;
-					conjugateItem.accumulatedTime += Time.deltaTime;
-				}
-
-				bool x() {
-					return rb.velocity.sqrMagnitude > 0.16f;
-				}
-			}
+			// if (rubbing) {
+			// 	if (accumulatedTime < 0.1) {
+			// 		doOnceForRubbing();
+			// 	}
+			// 	if (canCharge && triggerInterceptLate && isActiveObject && limit > 0) {
+			// 		if (!x()) {
+			// 			return; //Low velocity rubbing unresponsive
+			// 		}
+			// 		
+			// 		if(timeDelta < timeLimit) {
+			// 			timeDelta += Time.deltaTime;
+			// 		} else {
+			// 			timeDelta = 0f;
+			// 			limit--;
+			// 			electronDensity -= Mathf.Sign(chargeAffinity);
+			// 			conjugateItem.electronDensity -= Mathf.Sign(conjugateItem.chargeAffinity);
+			// 		}
+			//
+			// 		accumulatedTime += Time.deltaTime;
+			// 		conjugateItem.accumulatedTime += Time.deltaTime;
+			// 	}
+			//
+			// 	bool x() {
+			// 		return rb.velocity.sqrMagnitude > 0.16f;
+			// 	}
+			// }
 		}
 
 		/// <summary>
@@ -107,19 +103,19 @@ namespace Objects {
 		/// <param name="col"></param>
 		private void OnTriggerEnter2D(Collider2D col) {
 			if (col.CompareTag("ReportCollider")) return;
+			if (col.CompareTag("RubMachineCollider")) return;
 			isActiveObject = drag != null && drag.dragging;
 			if (isActiveObject) {
 				if (col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
 					if (canCharge) {
 						triggerIntercept = true;
-						triggerInterceptLate = true;
 						if (canContact && specs.canContact) {
 							chargingTriggerCoroutine = StartCoroutine(invokeChargingWithDelay(specs));
 						}
 					
-						if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
-							rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
-						}
+						// if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
+						// 	rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
+						// }
 					} else if (hasElectrostaticForce) {
 						Debug.Log("Configure this object to have reactive physics or push animation", gameObject);
 					} else if (specs.hasElectrostaticForce) {
@@ -133,29 +129,14 @@ namespace Objects {
 			if (other.CompareTag("ReportCollider")) {
 				GeneralGuidance.Instance.report.OnLeaveReport(materialID);
 			}
-			if (isActiveObject) {
-				triggerIntercept = false;
-				StartCoroutine(lateTriggerRemove(0.2f));
-			}
-
-			IEnumerator lateTriggerRemove(float time) {
-				yield return new WaitForSeconds(time);
-				if (!triggerIntercept) {
-					triggerInterceptLate = false;
-				} else {
-					other.TryGetComponent(out ElectricSpecs specs);
-					if (chargingTriggerCoroutine != null) {
-						StopCoroutine(chargingTriggerCoroutine);
-						chargingTriggerCoroutine = null;
-					}
-					if (rubbing && specs.materialID == rubbingMaterialID) {
-						OnStopRubbing(specs);
-					} else {
-						if (rubbingTriggerCoroutine != null) {
-							StopCoroutine(rubbingTriggerCoroutine);
-							rubbingTriggerCoroutine = null;
-						}
-					}
+			
+			if (other.CompareTag("RubMachineCollider")) {
+				if (other.gameObject.name == "Slut1") {
+					GeneralGuidance.Instance.rubbingMachine.slot1 = null;
+				}
+				
+				if (other.gameObject.name == "Slut2") {
+					GeneralGuidance.Instance.rubbingMachine.slot2 = null;
 				}
 			}
 		}
@@ -170,16 +151,53 @@ namespace Objects {
 		/// <param name="specs"></param>
 		private void OnStartRubbing(ElectricSpecs specs) {
 			rubbing = true;
+			bool doOnce = false;
 			if (canCharge) {
 				if (conjugateItem != specs) {
 					conjugateItem = specs;
+					doOnce = true;
 					specs.conjugateItem = this;
 					specs.rubbingMaterialID = materialID;
 					rubbingMaterialID = specs.materialID;
 					accumulatedTime = 0;
 					conjugateItem.accumulatedTime = 0;
 				}
+			} else {
+				return;
 			}
+			if (accumulatedTime < 0.1f) {
+				doOnceForRubbing(doOnce);
+			}
+		}
+
+		private IEnumerator _rubForOneSecond(ElectricSpecs specs) {
+			var delta = 0f;
+			if (!rubbing) {
+				OnStartRubbing(specs);
+				while (delta < 1f) {
+					if (canCharge && limit > 0) {
+						if(timeDelta < timeLimit) {
+							timeDelta += Time.deltaTime;
+						} else {
+							timeDelta = 0f;
+							limit--;
+							electronDensity -= Mathf.Sign(chargeAffinity);
+							conjugateItem.electronDensity -= Mathf.Sign(conjugateItem.chargeAffinity);
+						}
+				
+						accumulatedTime += Time.deltaTime;
+						conjugateItem.accumulatedTime += Time.deltaTime;
+					}
+					delta += Time.deltaTime;
+					yield return null;
+				}
+				delta = 0f;
+				OnStopRubbing(specs);
+			}
+		}
+
+		public void RubForOneSecond(ElectricSpecs specs) {
+			StartCoroutine(_rubForOneSecond(specs));
 		}
 
 		private void OnStopRubbing(ElectricSpecs specs) {
@@ -241,12 +259,11 @@ namespace Objects {
 		private float limit;
 		private float timeDelta;
 		private float timeLimit;
-		private void doOnceForRubbing() {
+		private void doOnceForRubbing(bool doOnce) {
 			if (!didOnceForRubbing) {
 				rubbingMaterialID = conjugateItem.materialID;
 				conjugateItem.rubbingMaterialID = materialID;
-				
-				DoContactCharging(conjugateItem, true);
+				if(doOnce) DoContactCharging(conjugateItem, true);
 				didOnceForRubbing = true;
 				if (chargeAffinity > 0) {
 					limit = electronDensity - 1;

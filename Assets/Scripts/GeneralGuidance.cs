@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Objects;
 using Reports;
@@ -24,8 +23,11 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 
 	private int scenarioIndex = -1;
 	public ReportManager report;
+	public RubbingMachineManager rubbingMachine;
 	public NavbarManager navbar;
 	public AlertController alert;
+
+	public bool allowDrag = false;
 
 	public void LoadNextScenario() {
 		scenarioIndex++;
@@ -157,6 +159,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	public string[,,] materialReportArray = new string[3,2,2];
 
 	[SerializeField] public List<GameObject> MaterialPrefabList = new();
+	[SerializeField] public GameObject positiveParticlePrefab;
+	[SerializeField] public GameObject negativeParticlePrefab;
 	#endregion
 
 	private void Start() {
@@ -171,6 +175,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		}
 		#endregion
 
+		//Skip chapter
+		scenarioIndex = 1;
 		LoadNextScenario();
 	}
 

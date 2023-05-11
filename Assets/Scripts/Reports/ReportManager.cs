@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Objects;
 using SceneManagers;
@@ -75,10 +74,6 @@ namespace Reports {
                 snapCount--;
                 snapList.Remove(materialID);
             }
-        }
-        
-        public void OnLeaveReportLate() { //Called when OnMouseUp is triggered
-            
         }
 
         public bool OnChargeUpdate() { //TODO: Couple specs charges with report entry

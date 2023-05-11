@@ -3,7 +3,6 @@
 
 using System;
 using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 
 // Modified from https://github.com/meteyldrm/CET49A-BasketballAir/blob/master/Assets/Scripts/Draggable.cs
@@ -29,6 +28,7 @@ namespace Objects {
         private Rigidbody2D rb;
         private Camera cam;
         private GameObject reportCollider;
+        private GameObject rubbingCollider;
     
         public bool canDrag = true;
 
@@ -91,7 +91,7 @@ namespace Objects {
         /// <param name="state">start, end</param>
         /// <param name="spaceVector">I have no idea what this does. Investigate.</param>
         private void SetInteractionState(bool state, Vector2 spaceVector) {
-            if (canDrag) {
+            if (canDrag && GeneralGuidance.Instance.allowDrag) {
                 switch (state) {
                     case true: {
                         var position = (Vector2) transform.position;
@@ -152,6 +152,20 @@ namespace Objects {
                 } else {
                     SetInteractionState(false, Vector2.zero);
                 }
+                
+                if (rubbingCollider != null) {
+                    if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
+                        if (rubbingCollider.gameObject.name == "Slut1") {
+                            GeneralGuidance.Instance.rubbingMachine.slot1 = specs;
+                        } else if (rubbingCollider.gameObject.name == "Slut2") {
+                            GeneralGuidance.Instance.rubbingMachine.slot2 = specs;
+                        } 
+                        SetInteractionState(false, Vector2.zero);
+                        transform.position = rubbingCollider.transform.position;
+                    }
+                } else {
+                    SetInteractionState(false, Vector2.zero);
+                }
             }
         }
 
@@ -160,11 +174,21 @@ namespace Objects {
                 reportCollider = col.gameObject;
                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
             }
+            
+            if (col.CompareTag("RubMachineCollider")) {
+                rubbingCollider = col.gameObject;
+                gameObject.transform.GetChild(0).gameObject.SetActive(false);
+            }
         }
 
         private void OnTriggerExit2D(Collider2D col) {
             if (col.CompareTag("ReportCollider")) {
                 reportCollider = null;
+                gameObject.transform.GetChild(0).gameObject.SetActive(true);
+            }
+            
+            if (col.CompareTag("RubMachineCollider")) {
+                rubbingCollider = null;
                 gameObject.transform.GetChild(0).gameObject.SetActive(true);
             }
         }
