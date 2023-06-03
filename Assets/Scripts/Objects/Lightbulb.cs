@@ -8,6 +8,7 @@ namespace Objects {
 		public Sprite DimBulb;
 		public Sprite LitBulb;
 		public LightAndChargeGuidance guidance;
+		private bool hasTriggered = false;
 		
 		public void LightUp() {
 			StartCoroutine(Light());
@@ -22,7 +23,10 @@ namespace Objects {
 			transform.GetChild(0).gameObject.SetActive(false);
 			var s = GetComponent<ElectricSpecs>();
 			s.electronDensity = s.protonDensity;
-			guidance.NextDialogue();
+			if (!hasTriggered) {
+				guidance.NextDialogue();
+				hasTriggered = true;
+			}
 		}
 	}
 }

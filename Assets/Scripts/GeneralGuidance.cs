@@ -27,6 +27,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	public NavbarManager navbar;
 	public AlertController alert;
 
+	public bool skipDialogueChargeS2 = false;
+
 	public bool allowDrag = false;
 
 	public void LoadNextScenario() {
@@ -156,7 +158,7 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// Iteration != 0 is used for the expanded report. Copy values, leave seconds empty.
 	/// </summary>
 	[SerializeField] private List<string> materialReportInitializationList = new();
-	public string[,,] materialReportArray = new string[3,2,2];
+	public string[,,] materialReportArray = new string[3,2,3];
 
 	[SerializeField] public List<GameObject> MaterialPrefabList = new();
 	[SerializeField] public GameObject positiveParticlePrefab;

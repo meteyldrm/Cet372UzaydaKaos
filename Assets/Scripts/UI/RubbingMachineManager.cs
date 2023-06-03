@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using Objects;
+using TMPro;
 using UnityEngine;
 
 namespace UI {
@@ -7,6 +9,8 @@ namespace UI {
         private RectTransform rt;
         private bool shown = false;
         private GameObject img;
+        public TMP_Text Text;
+        private bool updateText;
 
         public ElectricSpecs slot1;
         public ElectricSpecs slot2;
@@ -17,14 +21,18 @@ namespace UI {
         }
 
         private void OnEnable() {
-            if (Math.Abs(rt.anchoredPosition.x - (-215)) < 0.01f) {
-                shown = false;
-            } else if (Math.Abs(rt.anchoredPosition.x - 100) < 0.01f) {
-                shown = true;
-            } else {
-                rt.anchoredPosition = new Vector2(-215, rt.anchoredPosition.y);
-                shown = false;
+            if (gameObject.name == "RubbingMachine") {
+                if (Math.Abs(rt.anchoredPosition.x - (-215)) < 0.01f) {
+                    shown = false;
+                } else if (Math.Abs(rt.anchoredPosition.x - 100) < 0.01f) {
+                    shown = true;
+                } else {
+                    rt.anchoredPosition = new Vector2(-215, rt.anchoredPosition.y);
+                    shown = false;
+                }
             }
+
+            updateText = Text != null;
         }
 
         public void OnToggle() {
@@ -40,8 +48,41 @@ namespace UI {
 
         public void OnRub() {
             if (slot1 != null && slot2 != null) {
+                print($"Rubbing {slot1.name} and {slot2.name}");
                 slot1.RubForOneSecond(slot2);
+                DisableRubbingForOneSecond();
             }
+        }
+        private Coroutine crt;
+
+        private void DisableRubbingForOneSecond() {
+            if (crt == null) {
+                crt = StartCoroutine(enumerator());
+            }
+
+            IEnumerator enumerator() {
+                Draggable dr1 = slot1.GetComponent<Draggable>();
+                Draggable dr2 = slot2.GetComponent<Draggable>();
+                
+                dr1.canDrag = false;
+                dr2.canDrag = false;
+                var delta = 0f;
+                while (delta < 1f) {
+                    if(updateText) Text.text = $"{slot1.accumulatedTime:N1}s";
+                    delta += Time.deltaTime;
+                    yield return null;
+                }
+                
+                if(updateText) Text.text = $"{slot1.accumulatedTime:N1}s";
+                crt = null;
+                dr1.canDrag = true;
+                dr2.canDrag = true;
+            }
+        }
+
+        public void DeleteChildrenMaterials() {
+            if(slot1 != null) Destroy(slot1.gameObject);
+            if(slot2 != null) Destroy(slot2.gameObject);
         }
     }
 }

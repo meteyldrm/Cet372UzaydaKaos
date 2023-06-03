@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Objects {
 	/// <summary>
@@ -11,7 +12,6 @@ namespace Objects {
 	/// The rubbing charge calculations happen based on charge_1 = time * (affinity_1 - affinity2) * (proton_density_1 / (proton_density_1 + proton_density_2))
 	/// The contact charge calculations happen based on charge_1 = (electron_density_1 + electron_density_2) * (proton_density_1 / (proton_density_1 + proton_density_2))
 	/// electron_density = proton_density - accumulatedCharge
-	/// TODO: Introduce a canCharge field.
 	/// </summary>
 	public class ElectricSpecs : MonoBehaviour {
 		public int materialID; //The ID of the material. This is the pseudo-serialization script for cross-consumer compatibility so bind it to a prefab for init.
@@ -44,6 +44,9 @@ namespace Objects {
 
 		private Coroutine chargingTriggerCoroutine = null;
 		private bool triggerIntercept = false;
+
+		private bool showParticles;
+		public bool snapped = false;
 
 		private void Start() {
 			if (configured) return;
@@ -126,8 +129,11 @@ namespace Objects {
 		}
 
 		private void OnTriggerExit2D(Collider2D other) {
-			if (other.CompareTag("ReportCollider")) {
-				GeneralGuidance.Instance.report.OnLeaveReport(materialID);
+			if (other.CompareTag("ReportCollider") && gameObject.activeSelf && drag.dragging) {
+				if (GeneralGuidance.Instance.report.OnLeaveReport(materialID) && snapped) { //If the object was snapped before
+					accumulatedTime = 0;
+					snapped = false;
+				}
 			}
 			
 			if (other.CompareTag("RubMachineCollider")) {
@@ -138,6 +144,10 @@ namespace Objects {
 				if (other.gameObject.name == "Slut2") {
 					GeneralGuidance.Instance.rubbingMachine.slot2 = null;
 				}
+				
+				// if (other.gameObject.name == "ChargePanel") {
+				// 	GeneralGuidance.Instance.rubbingMachine.slot2 = null;
+				// }
 			}
 		}
 
@@ -189,6 +199,8 @@ namespace Objects {
 						conjugateItem.accumulatedTime += Time.deltaTime;
 					}
 					delta += Time.deltaTime;
+					OnChangeVisualParticles();
+					specs.OnChangeVisualParticles();
 					yield return null;
 				}
 				delta = 0f;
@@ -204,6 +216,8 @@ namespace Objects {
 			rubbing = false;
 			didOnceForRubbing = false;
 			specs.accumulatedTime = accumulatedTime;
+			OnChangeVisualParticles();
+			specs.OnChangeVisualParticles();
 		}
 		
 		public void OnResetRubbing() {
@@ -213,6 +227,7 @@ namespace Objects {
 			accumulatedTime = 0;
 			rubbingMaterialID = -1;
 			didOnceForRubbing = false;
+			OnChangeVisualParticles();
 		}
 
 		/// <summary>
@@ -235,6 +250,8 @@ namespace Objects {
 					}
 				}
 			}
+			OnChangeVisualParticles();
+			specs.OnChangeVisualParticles();
 		}
 		
 		private IEnumerator invokeChargingWithDelay(ElectricSpecs material) {
@@ -287,10 +304,50 @@ namespace Objects {
 			}
 			
 			rb.position = drag.dragStartPosition;
+			
+			//TODO: Check if this triggers report colliders. We need to instantiate from the report, not drag from it.
 		}
 
 		public float getEffectiveCharge() {
 			return protonDensity - electronDensity;
+		}
+
+		public void OnShowVisualParticles() {
+			showParticles = true;
+			var img = GetComponent<Image>();
+			Color.RGBToHSV(img.color, out float h, out float s, out float v);
+			img.color = Color.HSVToRGB(h, s, 65);
+			foreach (Transform tr in transform) {
+				if (tr.gameObject.name.ToLowerInvariant() is "positives" or "negatives") {
+					tr.gameObject.SetActive(true);
+				}
+			}
+			OnChangeVisualParticles();
+		}
+		
+		public void OnHideVisualParticles() {
+			showParticles = false;
+			var img = GetComponent<Image>();
+			Color.RGBToHSV(img.color, out float h, out float s, out float v);
+			img.color = Color.HSVToRGB(h, s, 100);
+			foreach (Transform tr in transform) {
+				if (tr.gameObject.name.ToLowerInvariant() is "positives" or "negatives") {
+					tr.gameObject.SetActive(false);
+				}
+			}
+		}
+		
+		public void OnChangeVisualParticles() {
+			if (!showParticles) return;
+			foreach (Transform tr in transform) {
+				for (int i = 0; i < tr.childCount; i++) {
+					if (tr.gameObject.name.ToLowerInvariant() == "positives") {
+						tr.GetChild(i).gameObject.SetActive(i < protonDensity);
+					} else if (tr.gameObject.name.ToLowerInvariant() == "negatives") {
+						tr.GetChild(i).gameObject.SetActive(i < electronDensity);
+					}
+				}
+			}
 		}
 	}
 }
