@@ -10,7 +10,7 @@ namespace Reports {
         public bool dualityConstraint = true; //Couple rubbed materials in scene
         public bool chargeObsConstraint = false; // Match visual charges with objects
         public bool secondObsConstraint = false; // Match visual charges for different rubbing times
-        private List<int> snapList = new();
+        public List<int> snapList = new();
 
         public int snapCount;
         public int matchedSnapCount;
@@ -175,14 +175,17 @@ namespace Reports {
             if (valueCount == 6) {
                 if (currentPage == 0 && !page0Done) {
                     GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                    print("Page 0 done");
                     page0Done = true;
                 }
                 if (currentPage == 1 && !page1Done) {
                     GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                    print("Page 1 done");
                     page1Done = true;
                 }
                 if (currentPage == 2 && !page2Done) {
                     GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                    print("Page 2 done");
                     page2Done = true;
                 }
             }
@@ -235,14 +238,22 @@ namespace Reports {
 
         private void CommonObjectSpawner(int i, int j, int iteration = 0) {
             var virtual_obj = GeneralGuidance.Instance.materialReportArray[i, j, iteration];
-            if (string.IsNullOrEmpty(virtual_obj)) return;
+            if (string.IsNullOrEmpty(virtual_obj)) {
+                print($"Virtual object empty for {i}, {j}, {iteration}");
+                return;
+            }
             var x = virtual_obj.Split("|");
             var id = x[4];
-            if (string.IsNullOrEmpty(id)) return;
+            if (string.IsNullOrEmpty(id)) {
+                print($"Material ID empty for {i}, {j}, {iteration}");
+                return;
+            }
             if (!GeneralGuidance.Instance.report.dualityConstraint) {
                 var tr = transform.GetChild(0).GetChild(i).GetChild(j);
                 tr.GetChild(0).GetComponent<TMP_InputField>().text = x[1];
                 SetMaterialFieldBackground(i, j);
+            } else {
+                print("Duality is true");
             }
             var subParent = transform.GetChild(0).GetChild(i).GetChild(j);
             var obj = Instantiate(GeneralGuidance.Instance.MaterialPrefabList[int.Parse(id)], GeneralGuidance.Instance.report.gameObject.transform, true);

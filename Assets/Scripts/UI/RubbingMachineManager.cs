@@ -12,6 +12,9 @@ namespace UI {
         public TMP_Text Text;
         private bool updateText;
 
+        public bool canToggle = false;
+        private bool doOnce = false;
+
         public ElectricSpecs slot1;
         public ElectricSpecs slot2;
 
@@ -77,6 +80,12 @@ namespace UI {
                 crt = null;
                 dr1.canDrag = true;
                 dr2.canDrag = true;
+                if (slot1.accumulatedTime > 2.99f) {
+                    if (!doOnce) {
+                        doOnce = true;
+                        GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                    }
+                }
             }
         }
 

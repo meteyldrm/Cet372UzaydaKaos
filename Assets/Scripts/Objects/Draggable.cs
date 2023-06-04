@@ -3,6 +3,7 @@
 
 using System;
 using SceneManagers;
+using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Objects {
         private Rigidbody2D rb;
         private Camera cam;
         private GameObject reportCollider;
+        private GameObject engReportCollider;
         private GameObject rubbingCollider;
     
         public bool canDrag = true;
@@ -48,6 +50,8 @@ namespace Objects {
         private bool scaled;
         private bool parented;
         private bool snapped;
+
+        private bool skippedOnce = false;
 
         public GameObject FakeParent;
     
@@ -106,7 +110,7 @@ namespace Objects {
                         interceptOffset = spaceVector - position;
                         screenVector = position - interceptOffset;
                         doDrag(true);
-                        if (!GeneralGuidance.Instance.report.dualityConstraint && reportCollider != null) {
+                        if (TryGetComponent(out ElectricSpecs _) && !GeneralGuidance.Instance.report.dualityConstraint && reportCollider != null) {
                             GeneralGuidance.Instance.report.SmartInstantiateElectricChild(FakeParent);
                         }
                         break;
@@ -151,9 +155,16 @@ namespace Objects {
                         }
                         SetInteractionState(false, Vector2.zero);
                         transform.SetParent(GeneralGuidance.Instance.report.gameObject.transform, true);
-                        FakeParent = reportCollider.gameObject;
+                        try {
+                            FakeParent = reportCollider.gameObject;
+                        } catch (NullReferenceException) {
+                            FakeParent = GeneralGuidance.Instance.report.gameObject;
+                        }
                         parented = true;
-                        transform.position = reportCollider.GetComponent<BoxCollider2D>().bounds.center;
+                        try {
+                            transform.position = reportCollider.GetComponent<BoxCollider2D>().bounds.center;
+                        } catch (NullReferenceException) {
+                        }
                         canDrag = false;
                         var obj = Instantiate(GeneralGuidance.Instance.MaterialPrefabList[specs.materialID], GeneralGuidance.GetSceneGameObjectByName("Materials", 2).transform);
                         obj.transform.position = guidanceStartPosition;
@@ -204,7 +215,10 @@ namespace Objects {
                                 transform.SetParent(rubbingCollider.gameObject.transform, true);
                                 snapped = true;
                                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
-                                GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                                if (!skippedOnce) {
+                                    GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                                    skippedOnce = true;
+                                }
                             } else { //Add non-interactive temporal snapping, reset position causing issues when moving n=2
                                 if(!snapped) specs.resetRubbingPosition();
                                 SetInteractionState(false, Vector2.zero);

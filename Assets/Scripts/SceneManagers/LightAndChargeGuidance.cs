@@ -24,10 +24,17 @@ namespace SceneManagers {
 
         public GameObject Light;
         public GameObject Report;
-        private bool reportSetInactive = false;
+        public GameObject EngReport;
         public GameObject Materials;
         public GameObject RubPanel;
         public GameObject ChargePanel;
+        public GameObject GuidanceBackground;
+        
+        public Sprite RoomExterior;
+        public Sprite RoomInterior;
+        public Sprite ReactorExterior;
+        public Sprite ReactorInterior;
+        public Sprite TurbineInterior;
 
         private UnityEvent evt;
         private bool removeEvent = false;
@@ -46,7 +53,7 @@ namespace SceneManagers {
         private readonly List<string> dialogues = new() {
             "A_Birkaç hafta önce gemide elektriksel problemler yaşamaya başlamıştık. Dışarıdan ışıkların kapalı olduğunu görmüşsündür, problemlerin neden meydana geldiğini çözmeye çalışıyordum.",
             "A_Etrafta yürürken veya camları silerken ışıkların yanıp söndüğünü fark ettim, buna sebep olan şey sürtünme olmalı fakat hangi malzemelerin yaptığını bilmiyorum.\n\nSorun çıkarabileceğini düşündüğüm 6 tane malzeme topladım ama hata yapmış olabilirim.",
-            "A_Test etmek için ufak bir ampul düzeneği de kurdum. Objeleri ampule dokundurarak belki yakmayı başarırsın.\n\nObjeleri açılan panele yerleştirip birbirlerine sürterek hangi kombinasyonların elektriksel probleme yol açtığını bulabilir misin?",
+            "A_Test etmek için ufak bir ampul düzeneği de kurdum. Objeleri ampule dokundurarak belki yakmayı başarırsın.\n\nObjeleri açılan panele yerleştirip birbirlerine sürterek hangi kombinasyonların elektriksel probleme yol açtığını bulabilir misin? Emin olmak için 2-3 kere sürt.",
             "A_Ampul yandı! Elektriksel bir etkileşim oldu.\n\nSağ üstteki rapor butonuna basarak açılan rapora bulduklarını işlemelisin.",
             "A_Ampulü yakan objeleri aynı satırın içindeki kutucuklara sürükle.\n\nHangi objelerin problem çıkardığını bu rapor sayesinde öğreneceğiz!",
             "A_İlk kombinasyonu doğru yazdın!\n\nRaporu tamamlamamız için ampulü yakan iki kombinasyon daha bul. Aynı objeleri tekrar kullanma hakkın var.\nRapor butonuna basarak raporu açıp kapatabilirsin.",
@@ -60,7 +67,51 @@ namespace SceneManagers {
             "A_3 saniye doldu! Objelerin elektriksel dağılımları değişti.\n\nBiz bunlara kısaca “yük” diyelim.\n\nObjelerin net yükünü hesaplayıp raporda “? Yük” yazan alana yazar mısın? Örneğin, 6 eksi ve 4 artı yükü için -2 yazman gerekli.",
             "A_Yazdığın yükler doğru görünüyor! Merceğin sağ altındaki çöp butonuyla mercekteki objeleri sil.\n\nRapordaki diğer objeleri de bu şekilde sürterek raporu tamamlayalım.",
             "A_Tüm yükleri hesapladın, tebrikler! Hangi material kombinasyonlarının daha iyi yük yüklendiğini artık biliyoruz.\n\nAraştırmamızın 2. kısmında da farklı sürelerde sürtüp sonuçları yazalım. Raporunun altındaki oklarla geçiş yapıp diğer sürelerde de aynı şekilde raporlayalım.",
+            "A_5 saniye boyunca sürttüklerini de hesapladın!\n\nSon olarak 7 saniyeye de geçip raporlayalım.",
+            "A_Raporu bitirmişin, harika!\n\nYazdıkların doğru görünüyor.",
+            "A_Artık etkileşime giren materyalleri tespit ettiğimize göre ileride sorunları önlememiz daha kolay olacak.\n\nÖnlemimizi alabiliriz fakat istasyonun elektrik devreleri düzgün çalışmamaya devam ediyor. Sorunları teşhis edip çözmeliyiz.",
+            "A_Elektriksel arızası olan birkaç tane oda var.\n\nBu odalara girip elekrik panelinden elektrik akışını kapatmamız gerekiyor, ancak ben odalara girmeye çalıştığımda kapıları açılmamıştı. Belki sorunu beraber çözeriz. Hazır mısın?",
+            "P_Evet! Öğrendiklerimizi uygulamaya koymamızın vakti geldi.",
+            //Activity 3
+            "A_Önem sırasına göre problemleri çözmemiz gerek ve oksijenimiz giderek azalıyor.\n\nBu yüzden öncelikle yaşam destek odasıyla ilgilenmeliyiz. Bu kapıyı bir şekilde açmamız gerek.",
+            "P_Mercekle kapıya bakarsak belki problem görebiliriz.",
+            "A_İyi fikir, $NAME$. Merceği biraz daha yakına koyacağım ki daha geniş bir alana bakalım.",
+            "A_Kapıda biraz yük birikmiş gibi görünüyor. Güvenlik sistemi, birinin izinsiz giriş yapmaya çalıştığını düşünüp kilitlemiş olmalı.\n\nKapının fazla yükünden kurtulabilirsek kapının kilidi açılacak.",
+            "A_Görünüşe göre raporundaki objelerle yük üretmemiz gerekiyor.\n\nRaporundan iki tane objeyi yere koyar mısın?",
+            "A_Kapıyı fazla yükünden arındırmalısın. Objeleri sürttükten sonra kapıya dokundurabilirsin.\n\nGüvenlik taramasını “Kontrol Et” butonuna basarak çalıştırmayı unutma.",
+            "A_Kapının net yükünü sıfırladın! Kapı nötr bir yüke sahip, güvenlik sistemi kapıyı açtı.\n\nArtık içeri girebiliriz.",
+            "A_Burası yaşam destek odası. Oksijen üreten sistemler burada çalışıyor.\n\nElektrik paneli arkamda bulunuyor fakat panele erişimimiz tahtalarla engellenmiş, onları kaldırmamız mümkün değil. Kapağı açmamızı engelleyen tahtayı sağa doğru ittirmeyi denemeliyiz.",
+            "A_Raporundan yine iki obje seçmelisin.\n\nYüklü gördüğümüz tahtayı, uzaktan ittirmeyi deneyelim. Sağa doğru itilirse kapağı açabilirim.",
+            "A_Güzel. Yüklü tahtaya ancak uzaktan etki edebiliriz, objeleri birbirine sürtüp nasıl etki ediyor diye bak.",
+            "A_Olamaz, tahta sola kaydı! Net yüklerle alakalı bir problem olmalı.\n\nTahtayı sağa doğru ittirmezsek bulunduğu yere sıkışabilir!",
+            "A_Paneli açığa çıkarmayı başardın! Kapağı da yere düştü, panelin içine erişebiliyorum.",
+            "A_Panele yalıtkan köpük sıktım, artık burada elektrik sorunları yaşamayacağız.\n\nDiğer odaları da açmadan önce geminin teknik raporunu doldurmam gerekiyor. Yardımcı olur musun?",
+            "A_Teknik rapora erişmen için yukarıda yeni bir buton var.\n\nTeknik raporu açar mısın?",
+            "A_Teknik rapora erişmen için yukarıda yeni bir buton var.\n\nTeknik raporu açar mısın?",
         };
+
+        public static string staticstartswith = null;
+        public void SetDialogue(string startswith = "") {
+            if (staticstartswith != null) {
+                for (int i = 0; i < dialogues.Count; i++) {
+                    if (dialogues[i].StartsWith(staticstartswith)) {
+                        dialogueIndex = i;
+                        DisplayDialogue(dialogues[dialogueIndex]);
+                        break;
+                    }
+                }
+
+                staticstartswith = null;
+                return;
+            }
+            for (int i = 0; i < dialogues.Count; i++) {
+                if (dialogues[i].StartsWith(startswith)) {
+                    dialogueIndex = i;
+                    DisplayDialogue(dialogues[dialogueIndex]);
+                    break;
+                }
+            }
+        }
 
         public void PrevDialogue() {
             if (dialogueIndex > 0) {
@@ -185,6 +236,25 @@ namespace SceneManagers {
                     removeEvent = true;
                 }
 
+                if (dialogue.StartsWith("Raporu bitirmişin")) {
+                    Report.SetActive(false);
+                    APA.SetActive(true);
+                    RubPanel.SetActive(false);
+                    NavigationArrows.SetActive(true);
+                }
+                
+                if (dialogue.StartsWith("Önem sırasına")) {
+                    GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomExterior;
+                }
+                
+                if (dialogue.StartsWith("Teknik rapora erişmen için")) {
+                    var index = GeneralGuidance.Instance.navbar.AddButton();
+                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
+                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
+                }
+                
+                
+
                 if (APA.activeInHierarchy) {
                     APASpeech.SetActive(true);
                     TopSpeech.SetActive(false);
@@ -200,13 +270,14 @@ namespace SceneManagers {
         }
 
         private void LateUpdate() {
-            if (reportSetInactive) {
-                Report.SetActive(false);
-                reportSetInactive = false;
-            }
-
             if (GeneralGuidance.Instance.skipDialogueChargeS2) {
                 GeneralGuidance.Instance.skipDialogueChargeS2 = false;
+                NextDialogue();
+            }
+
+            if (GeneralGuidance.Instance.skipDialogueEngReport) {
+                GeneralGuidance.Instance.skipDialogueEngReport = false;
+                EngReport.SetActive(false);
                 NextDialogue();
             }
         }
@@ -214,6 +285,12 @@ namespace SceneManagers {
         private void ToggleReport() {
             if(!Report.activeSelf) APA.SetActive(Report.activeSelf);
             Report.SetActive(!Report.activeSelf);
+            evt.Invoke();
+        }
+        
+        private void ToggleEngReport() {
+            if(!EngReport.activeSelf) APA.SetActive(EngReport.activeSelf);
+            EngReport.SetActive(!EngReport.activeSelf);
             evt.Invoke();
         }
 

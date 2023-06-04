@@ -23,11 +23,13 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 
 	private int scenarioIndex = -1;
 	public ReportManager report;
+	public EngReportManager engReport;
 	public RubbingMachineManager rubbingMachine;
 	public NavbarManager navbar;
 	public AlertController alert;
 
 	public bool skipDialogueChargeS2 = false;
+	public bool skipDialogueEngReport = false;
 
 	public bool allowDrag = false;
 
@@ -222,9 +224,10 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 			}
 		}
 		
-		if (wasFoundInCurrentIteration(specs.materialID, iteration)) {
-			deleteFromCurrentIteration(specs.materialID, iteration);
-		}
+		// if (wasFoundInCurrentIteration(specs.materialID, iteration) && !report.snapList.Contains(specs.materialID)) {
+		// 	print("Iteration deleted");
+		// 	deleteFromCurrentIteration(specs.materialID, iteration);
+		// }
 		
 		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
 		return true;
