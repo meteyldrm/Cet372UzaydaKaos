@@ -36,6 +36,7 @@ namespace UI {
             }
 
             updateText = Text != null;
+            DeleteChildrenMaterials();
         }
 
         public void OnToggle() {

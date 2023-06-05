@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Objects;
 using Reports;
@@ -32,6 +33,11 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	public bool skipDialogueEngReport = false;
 
 	public bool allowDrag = false;
+
+	public bool skipActivity = false;
+	public void SkipActivity() {
+		skipActivity = true;
+	}
 
 	public void LoadNextScenario() {
 		scenarioIndex++;
@@ -182,6 +188,32 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		//Skip chapter
 		scenarioIndex = 1;
 		LoadNextScenario();
+	}
+
+	private void LateUpdate() {
+		if (skipActivity) {
+			skipActivity = false;
+			if (scenarioIndex > 1) {
+				return;
+			}
+			
+			if (scenarioIndex == 1) {
+				playerName = "Admin Test";
+			}
+			
+			LoadNextScenario();
+		}
+	}
+
+	private void Update() {
+		if (Input.GetKeyUp(KeyCode.LeftControl)) {
+			ToggleAdminPanel();
+		}
+	}
+
+	public GameObject adminPanel;
+	public void ToggleAdminPanel() {
+		adminPanel.SetActive(!adminPanel.activeSelf);
 	}
 
 	#region Report Functionality

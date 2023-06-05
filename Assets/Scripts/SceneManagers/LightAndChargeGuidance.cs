@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Objects;
@@ -7,6 +8,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using Utility;
 
 namespace SceneManagers {
     public class LightAndChargeGuidance : MonoBehaviour
@@ -60,6 +62,7 @@ namespace SceneManagers {
             //"ACTION Skip",
             "A_İkinci kombinasyonu doğru yazdın!\n\nRaporu tamamlamamız için ampulü yakan bir kombinasyon daha bul. Aynı objeleri tekrar kullanma hakkın var.\nRapor butonuna basarak raporu açıp kapatabilirsin.",
             "A_Tebrikler, rapor başarılı! Tüm kombinasyonları buldun.\n\nİşimi baya kolaylaşırdın $NAME$, hızlı çalışıyorsun.",
+            //Activity 2
             "A_Sen raporu hazırlarken ben de özel bir mercek üzerinde uğraşıyordum. Elektriksel etkilerin nasıl açığa çıktığını öğrenmemiz gerekiyor.\n\nBu mercek objeleri biraz büyütecek, elektriksel yoğunluğu da göstermesini umuyorum.",
             "A_Hangi objelerin birbiriyle etkileşime geçtiğini bildiğimiz için topladığım yığından kurtulabiliriz.\n\nOnların yerine merceği koyalım, objeleri bu sefer merceğe koyacaksın. Raporu açar mısın?",
             "A_Objeleri, rapordan merceğe sürükleyerek görüntüleyebilirsin.\n\nİstemediğin bir şey yaparsan veya objeleri silmek istersen, merceğin sağ altındaki çöp butonuna tıklayabilirsin. İlk satırdaki objeleri görüntüler misin?",
@@ -80,6 +83,7 @@ namespace SceneManagers {
             "A_Görünüşe göre raporundaki objelerle yük üretmemiz gerekiyor.\n\nRaporundan iki tane objeyi yere koyar mısın?",
             "A_Kapıyı fazla yükünden arındırmalısın. Objeleri sürttükten sonra kapıya dokundurabilirsin.\n\nGüvenlik taramasını “Kontrol Et” butonuna basarak çalıştırmayı unutma.",
             "A_Kapının net yükünü sıfırladın! Kapı nötr bir yüke sahip, güvenlik sistemi kapıyı açtı.\n\nArtık içeri girebiliriz.",
+            //Activity 4
             "A_Burası yaşam destek odası. Oksijen üreten sistemler burada çalışıyor.\n\nElektrik paneli arkamda bulunuyor fakat panele erişimimiz tahtalarla engellenmiş, onları kaldırmamız mümkün değil. Kapağı açmamızı engelleyen tahtayı sağa doğru ittirmeyi denemeliyiz.",
             "A_Raporundan yine iki obje seçmelisin.\n\nYüklü gördüğümüz tahtayı, uzaktan ittirmeyi deneyelim. Sağa doğru itilirse kapağı açabilirim.",
             "A_Güzel. Yüklü tahtaya ancak uzaktan etki edebiliriz, objeleri birbirine sürtüp nasıl etki ediyor diye bak.",
@@ -87,7 +91,30 @@ namespace SceneManagers {
             "A_Paneli açığa çıkarmayı başardın! Kapağı da yere düştü, panelin içine erişebiliyorum.",
             "A_Panele yalıtkan köpük sıktım, artık burada elektrik sorunları yaşamayacağız.\n\nDiğer odaları da açmadan önce geminin teknik raporunu doldurmam gerekiyor. Yardımcı olur musun?",
             "A_Teknik rapora erişmen için yukarıda yeni bir buton var.\n\nTeknik raporu açar mısın?",
-            "A_Teknik rapora erişmen için yukarıda yeni bir buton var.\n\nTeknik raporu açar mısın?",
+            "A_Yardımın için teşekkür ederim.\n\nBu geminin teknik raporu; normalde gemi üzerinde yapılan işlemlerin sonuçlarını buraya not alıyor.\n\nYaşadığımız enerji kaybından dolayı raporu tamamlayacak işlemci gücü yok.",
+            "A_Raporu oluşturup kısmen analiz etmeyi başarmış, odalarda gözlem yaptıkça burayı tamamlamamız gerekecek. Boşluklardan uygun olan seçenekleri seçerek cümleleri tamamlar mısın?",
+            "A_Sistem raporu onayladı, doğru doldurmuşsun.\n\nAçılmayan başka odalar varsa onları da açmalıyız.",
+            "A_Geminin nükleer reaktörü bozulmuş olmalı.\n\nBunu düzeltmemiz gerek, yoksa reaktör eriyebilir!",
+            //Activity 5
+            "A_Nükleer reaktör bu kapının arkasında. İçeri girince fazla vaktimiz olmayacak, hızlı bir şekilde problemleri çözmeliyiz.\n\nHazır mısın?",
+            "P_Evet! Reaktör erimediği sürece odanın nispeten güvenli olması lazım, değil mi?",
+            "A_Erimemişse muhtemelen güvenlidir, fakat o riski almak istediğine emin misin? Reaktörden uzakta durmamız gerekiyor.\n\nHaydi, gecikmeden içeri göz atalım.",
+            "P_Nasıl görünüyor?",
+            "A_Reaktörün koruyucu panelleri yerinden çıkmış. Daha fazla yaklaşmadan bu panelleri nasıl yerleştirebiliriz ki?",
+            "P_Tekrar mercekten bakmayı deneyebiliriz!",
+            "A_Reaktörün üç yanında bu iletken panellerden var, ilki nötr görünüyor. Diğerlerinin de nötr olduğunu varsayabiliriz.\n\nNe yapalım?",
+            "P_Yük yaratıp ne olduğunu görmekten başka şansımız yok sanırım.",
+            "A_Pekala. Bu panelle başlayalım. Objeleri sürterek yük oluşturmayı deneyeblirsin ama bu sefer daha uzun süre sürtmen gerekebilir.",
+            "A_$NAME$, bak! Paneli çekmeye başladın!\n\nÖbür objeyi yakınlaştırırsan ne oluyor?",
+            "A_Panel tamamen yerine oturdu!",
+            "P_İlk panel yerine oturdu! Ayrıca, iki obje de paneli çekti! Diğer panelleri çekerken daha dikkatli gözlemleyip raporlayalım.",
+            "A_Tüm panelleri yerleştirdin! Artık reaktör güvenli.\n\nTeknik rapora bir göz atalım.",
+            "A_Yaptığımız gözlemlere göre boşlukları doldur.\n\nBazı boşlukları tahmin edip denemen gerekebilir.",
+            "A_Rapor doğru. Şimdi elektrik üretiyor muyuz diye buhar türbinine gidip bakabiliriz.",
+            //Activity 6
+            "A_Görünüşe göre hiç elektrik üretmiyoruz. Buhar olduğunu görüyorum ama türbinlerin dönmeye başlaması lazım. Döndürme kolunu çevirir misin?",
+            "A_Sen kolu çevirdikçe elektrik üretmeye başlıyoruz!\n\nÇevirmeye devam et!",
+            "A_Tam güce kavuştuk! Yardımın için teşekkür ederim $NAME$, uzay gemisini kurtardın!.. Tatil yapmaya gelmiştin, değil mi?",
         };
 
         public static string staticstartswith = null;
@@ -269,6 +296,80 @@ namespace SceneManagers {
             }
         }
 
+        private void Update() {
+            if (GeneralGuidance.Instance.skipActivity) {
+                //Ac2-7
+                //Ac3-20
+                //Ac3-20
+                if (dialogueIndex < 7) {
+                    GeneralGuidance.Instance.allowDrag = true;
+                    if (GeneralGuidance.Instance.navbar.GetComponent<NavbarManager>().displayCount == 2) {
+                        var index = GeneralGuidance.Instance.navbar.AddButton();
+                        GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
+                        GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleReport);
+                    }
+                    GeneralGuidance.Instance.materialReportArray = new string[3, 2, 3];
+                    GeneralGuidance.Instance.materialReportArray[0, 0, 0] = "1||3,010964||1|0";
+                    GeneralGuidance.Instance.materialReportArray[0, 1, 0] = "-1||3,010964||0|1";
+                    
+                    GeneralGuidance.Instance.materialReportArray[1, 0, 0] = "1||3,010964||3|5";
+                    GeneralGuidance.Instance.materialReportArray[1, 1, 0] = "-1||3,010964||5|3";
+                    
+                    GeneralGuidance.Instance.materialReportArray[2, 0, 0] = "-1||3,010964||3|1";
+                    GeneralGuidance.Instance.materialReportArray[2, 1, 0] = "1||3,010964||1|3";
+                    dialogueIndex = 6;
+                    NextDialogue();
+                    return;
+                }
+
+                if (dialogueIndex < 20) {
+                    Report.SetActive(false);
+                    
+                    GeneralGuidance.Instance.materialReportArray[0, 0, 0] = "1|1|3,010964||1|0";
+                    GeneralGuidance.Instance.materialReportArray[0, 1, 0] = "-1|-1|3,010964||0|1";
+                    
+                    GeneralGuidance.Instance.materialReportArray[1, 0, 0] = "1|1|3,010964||3|5";
+                    GeneralGuidance.Instance.materialReportArray[1, 1, 0] = "-1|-1|3,010964||5|3";
+                    
+                    GeneralGuidance.Instance.materialReportArray[2, 0, 0] = "-1|-1|3,010964||3|1";
+                    GeneralGuidance.Instance.materialReportArray[2, 1, 0] = "1|1|3,010964||1|3";
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 2; j++) {
+                            GeneralGuidance.Instance.materialReportArray[i, j, 1] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
+                            GeneralGuidance.Instance.materialReportArray[i, j, 2] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
+                        }
+                    }
+                    
+                    GeneralGuidance.Instance.materialReportArray[0, 0, 1] = "2|2|5,010964||1|0";
+                    GeneralGuidance.Instance.materialReportArray[0, 1, 1] = "-2|-2|5,010964||0|1";
+                    GeneralGuidance.Instance.materialReportArray[0, 0, 2] = "4|4|7,010964||1|0";
+                    GeneralGuidance.Instance.materialReportArray[0, 1, 2] = "-4|-4|7,010964||0|1";
+                    APA.SetActive(true);
+                    Light.SetActive(false);
+                    RubPanel.SetActive(false);
+                    ChargePanel.SetActive(true);
+                    GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
+                    GeneralGuidance.Instance.rubbingMachine.slot1 = null;
+                    GeneralGuidance.Instance.rubbingMachine.slot2 = null;
+                    DeleteMaterials();
+                    Materials.SetActive(true);
+                    GeneralGuidance.Instance.report.ConvertToChargeAmounts();
+                    GeneralGuidance.Instance.report.dualityConstraint = false;
+                    GeneralGuidance.Instance.report.chargeObsConstraint = true;
+                    for (int i = 0; i < Report.transform.childCount; i++) {
+                        if (Report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
+                            draggable.canDrag = true;
+                        }
+                    }
+                    ChargePanel.SetActive(false);
+                    
+                    dialogueIndex = 19;
+                    NextDialogue();
+                    return;
+                }
+            }
+        }
+
         private void LateUpdate() {
             if (GeneralGuidance.Instance.skipDialogueChargeS2) {
                 GeneralGuidance.Instance.skipDialogueChargeS2 = false;
@@ -283,13 +384,13 @@ namespace SceneManagers {
         }
 
         private void ToggleReport() {
-            if(!Report.activeSelf) APA.SetActive(Report.activeSelf);
+            APA.SetActive(Report.activeSelf);
             Report.SetActive(!Report.activeSelf);
             evt.Invoke();
         }
         
         private void ToggleEngReport() {
-            if(!EngReport.activeSelf) APA.SetActive(EngReport.activeSelf);
+            APA.SetActive(EngReport.activeSelf);
             EngReport.SetActive(!EngReport.activeSelf);
             evt.Invoke();
         }
