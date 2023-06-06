@@ -24,10 +24,12 @@ namespace Utility {
 
         private void SetSize(int size) {
             rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, sizeMap[size - 2]);
-            for (int i = 2; i < transform.childCount; i++) {
-                transform.GetChild(i).gameObject.SetActive(false);
+            foreach (Transform tr in transform) {
+                tr.gameObject.SetActive(false);
             }
-            transform.GetChild(size - 1).gameObject.SetActive(true);
+            for (int i = 0; i < size; i++) {
+                transform.GetChild(i).gameObject.SetActive(true);
+            }
         }
     }
 }

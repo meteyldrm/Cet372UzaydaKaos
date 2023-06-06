@@ -215,7 +215,7 @@ namespace Objects {
                                 transform.SetParent(rubbingCollider.gameObject.transform, true);
                                 snapped = true;
                                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
-                                if (!skippedOnce) {
+                                if (!skippedOnce && GeneralGuidance.Instance.notifyOnSnap) {
                                     GeneralGuidance.Instance.skipDialogueChargeS2 = true;
                                     skippedOnce = true;
                                 }

@@ -48,6 +48,9 @@ namespace Objects {
 		private bool showParticles;
 		public bool snapped = false;
 
+		private bool wentLeft = false;
+		private bool wentRight = false;
+
 		private void Start() {
 			if (configured) return;
 			rb = GetComponent<Rigidbody2D>();
@@ -119,10 +122,28 @@ namespace Objects {
 						// if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
 						// 	rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
 						// }
-					} else if (hasElectrostaticForce) {
-						Debug.Log("Configure this object to have reactive physics or push animation", gameObject);
-					} else if (specs.hasElectrostaticForce) {
-						Debug.Log("Configure this object to have reactive physics or push animation", specs.gameObject);
+					}
+				}
+			} else if (hasElectrostaticForce) {
+				if(TryGetComponent(out RectTransform rt) && col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
+					var rp = rt.position;
+
+					if (specs.getEffectiveCharge() == 0) {
+						return;
+					}
+
+					if (Mathf.FloorToInt(Mathf.Sign(specs.getEffectiveCharge())) == Mathf.FloorToInt(Mathf.Sign(getEffectiveCharge()))) {
+						rp.x += 0.8f;
+						rt.position = rp;
+						wentRight = true;
+						GeneralGuidance.Instance.dialogueRoomForcePositive = true;
+						hasElectrostaticForce = false;
+						wentRight = false; //Make the object appear on the right permanently
+					} else {
+						rp.x -= 0.8f;
+						rt.position = rp;
+						wentLeft = true;
+						GeneralGuidance.Instance.dialogueRoomForceNegative = true;
 					}
 				}
 			}
@@ -134,9 +155,7 @@ namespace Objects {
 					accumulatedTime = 0;
 					snapped = false;
 				}
-			}
-			
-			if (other.CompareTag("RubMachineCollider")) {
+			} else if (other.CompareTag("RubMachineCollider")) {
 				if (other.gameObject.name == "Slut1") {
 					GeneralGuidance.Instance.rubbingMachine.slot1 = null;
 				}
@@ -148,6 +167,18 @@ namespace Objects {
 				// if (other.gameObject.name == "ChargePanel") {
 				// 	GeneralGuidance.Instance.rubbingMachine.slot2 = null;
 				// }
+			} else if(TryGetComponent(out RectTransform rt)) {
+				if (wentLeft) {
+					var rp = rt.position;
+					rp.x += 0.8f;
+					rt.position = rp;
+					wentLeft = false;
+				} else if(wentRight) {
+					var rp = rt.position;
+					rp.x -= 0.8f;
+					rt.position = rp;
+					wentRight = false;
+				}
 			}
 		}
 
@@ -249,6 +280,11 @@ namespace Objects {
 						bulb.LightUp();
 					}
 				}
+
+				if (Math.Abs(specs.protonDensity - specs.electronDensity) < 0.1f && specs.gameObject.CompareTag("ContactNeutral")) {
+					print("Neutral skip");
+					GeneralGuidance.Instance.skipDialogueRoomNeutral = true;
+				}
 			}
 			OnChangeVisualParticles();
 			specs.OnChangeVisualParticles();
@@ -314,9 +350,10 @@ namespace Objects {
 
 		public void OnShowVisualParticles() {
 			showParticles = true;
-			var img = GetComponent<Image>();
-			Color.RGBToHSV(img.color, out float h, out float s, out float v);
-			img.color = Color.HSVToRGB(h, s, 65);
+			if (TryGetComponent(out Image img)) {
+				Color.RGBToHSV(img.color, out float h, out float s, out float v);
+				img.color = Color.HSVToRGB(h, s, 65);
+			}
 			foreach (Transform tr in transform) {
 				if (tr.gameObject.name.ToLowerInvariant() is "positives" or "negatives") {
 					tr.gameObject.SetActive(true);

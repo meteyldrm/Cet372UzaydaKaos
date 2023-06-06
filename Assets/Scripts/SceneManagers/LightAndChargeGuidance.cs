@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Objects;
 using TMPro;
@@ -59,7 +57,6 @@ namespace SceneManagers {
             "A_Ampul yandı! Elektriksel bir etkileşim oldu.\n\nSağ üstteki rapor butonuna basarak açılan rapora bulduklarını işlemelisin.",
             "A_Ampulü yakan objeleri aynı satırın içindeki kutucuklara sürükle.\n\nHangi objelerin problem çıkardığını bu rapor sayesinde öğreneceğiz!",
             "A_İlk kombinasyonu doğru yazdın!\n\nRaporu tamamlamamız için ampulü yakan iki kombinasyon daha bul. Aynı objeleri tekrar kullanma hakkın var.\nRapor butonuna basarak raporu açıp kapatabilirsin.",
-            //"ACTION Skip",
             "A_İkinci kombinasyonu doğru yazdın!\n\nRaporu tamamlamamız için ampulü yakan bir kombinasyon daha bul. Aynı objeleri tekrar kullanma hakkın var.\nRapor butonuna basarak raporu açıp kapatabilirsin.",
             "A_Tebrikler, rapor başarılı! Tüm kombinasyonları buldun.\n\nİşimi baya kolaylaşırdın $NAME$, hızlı çalışıyorsun.",
             //Activity 2
@@ -86,7 +83,7 @@ namespace SceneManagers {
             //Activity 4
             "A_Burası yaşam destek odası. Oksijen üreten sistemler burada çalışıyor.\n\nElektrik paneli arkamda bulunuyor fakat panele erişimimiz tahtalarla engellenmiş, onları kaldırmamız mümkün değil. Kapağı açmamızı engelleyen tahtayı sağa doğru ittirmeyi denemeliyiz.",
             "A_Raporundan yine iki obje seçmelisin.\n\nYüklü gördüğümüz tahtayı, uzaktan ittirmeyi deneyelim. Sağa doğru itilirse kapağı açabilirim.",
-            "A_Güzel. Yüklü tahtaya ancak uzaktan etki edebiliriz, objeleri birbirine sürtüp nasıl etki ediyor diye bak.",
+            "A_Yüklü tahtaya ancak uzaktan etki edebiliriz, objeleri birbirine sürtüp nasıl etki ediyor diye bak.",
             "A_Olamaz, tahta sola kaydı! Net yüklerle alakalı bir problem olmalı.\n\nTahtayı sağa doğru ittirmezsek bulunduğu yere sıkışabilir!",
             "A_Paneli açığa çıkarmayı başardın! Kapağı da yere düştü, panelin içine erişebiliyorum.",
             "A_Panele yalıtkan köpük sıktım, artık burada elektrik sorunları yaşamayacağız.\n\nDiğer odaları da açmadan önce geminin teknik raporunu doldurmam gerekiyor. Yardımcı olur musun?",
@@ -121,7 +118,9 @@ namespace SceneManagers {
         public void SetDialogue(string startswith = "") {
             if (staticstartswith != null) {
                 for (int i = 0; i < dialogues.Count; i++) {
-                    if (dialogues[i].StartsWith(staticstartswith)) {
+                    var dlg = dialogues[i].TrimStart("A_");
+                    dlg = dlg.TrimStart("P_");
+                    if (dlg.StartsWith(staticstartswith)) {
                         dialogueIndex = i;
                         DisplayDialogue(dialogues[dialogueIndex]);
                         break;
@@ -132,7 +131,9 @@ namespace SceneManagers {
                 return;
             }
             for (int i = 0; i < dialogues.Count; i++) {
-                if (dialogues[i].StartsWith(startswith)) {
+                var dlg = dialogues[i].TrimStart("A_");
+                dlg = dlg.TrimStart("P_");
+                if (dlg.StartsWith(startswith)) {
                     dialogueIndex = i;
                     DisplayDialogue(dialogues[dialogueIndex]);
                     break;
@@ -165,6 +166,8 @@ namespace SceneManagers {
         }
 
         private void DisplayDialogue(string dialogue) {
+            bool apaTurn = false;
+            bool playerTurn = false;
             if (dialogue.StartsWith("ACTION ")) {
                 dialogue = dialogue.Replace("ACTION ", "");
 
@@ -186,102 +189,189 @@ namespace SceneManagers {
                 }
                 
             } else if (dialogue.StartsWith("PLAYER ") || dialogue.StartsWith("P_")) {
-                dialogue = dialogue.Replace("PLAYER ", "").Replace("P_", "");
-
-                if (dialogue.StartsWith("Merhaba! Benim adım")) {
-                }
-                
-                APASpeech.SetActive(false);
-                BottomSpeech.SetActive(true);
-                BottomSpeechTMP.text = Interpolator(dialogue);
+                playerTurn = true;
             } else if (dialogue.StartsWith("APA ") || dialogue.StartsWith("A_")) {
-                dialogue = dialogue.Replace("APA ", "").Replace("A_", "");
+                apaTurn = true;
+            }
+
+            dialogue = dialogue.Replace("APA ", "").Replace("A_", "");
+            dialogue = dialogue.Replace("PLAYER ", "").Replace("P_", "");
                 
-                if (dialogue.StartsWith("Etrafta yürürken")) {
-                    //Display draggables
-                    Materials.SetActive(true);
-                }
+            if (dialogue.StartsWith("Etrafta yürürken")) {
+                //Display draggables
+                Materials.SetActive(true);
+            }
 
-                if (dialogue.StartsWith("Test etmek için")) {
-                    //Hide APA, display lightbulb
-                    APA.SetActive(false);
-                    Light.SetActive(true);
-                    NavigationArrows.SetActive(false);
-                    GeneralGuidance.Instance.allowDrag = true;
-                    RubPanel.SetActive(true);
-                }
+            if (dialogue.StartsWith("Test etmek için")) {
+                GeneralGuidance.Instance.activityIndex = 1;
+                //Hide APA, display lightbulb
+                APA.SetActive(false);
+                Light.SetActive(true);
+                NavigationArrows.SetActive(false);
+                GeneralGuidance.Instance.allowDrag = true;
+                RubPanel.SetActive(true);
+            }
 
-                if (dialogue.StartsWith("Ampul yandı! ")) {
-                    var index = GeneralGuidance.Instance.navbar.AddButton();
-                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
-                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleReport);
-                    evt.AddListener(NextDialogue);
-                    removeEvent = true;
-                }
+            if (dialogue.StartsWith("Ampul yandı! ")) {
+                var index = GeneralGuidance.Instance.navbar.AddButton();
+                GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
+                GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleReport);
+                evt.AddListener(NextDialogue);
+                removeEvent = true;
+            }
 
-                if (dialogue.StartsWith("İlk kombinasyonu doğru yazdın!")) {
-                    // reportSetInactive = true;
-                    APA.SetActive(false);
-                    // NavigationArrows.SetActive(true);
-                }
+            if (dialogue.StartsWith("İlk kombinasyonu doğru yazdın!")) {
+                // reportSetInactive = true;
+                APA.SetActive(false);
+                // NavigationArrows.SetActive(true);
+            }
 
-                if (dialogue.StartsWith("Tebrikler, rapor başarılı!")) {
-                    NavigationArrows.SetActive(true);
-                    Report.SetActive(false);
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 2; j++) {
-                            GeneralGuidance.Instance.materialReportArray[i, j, 1] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
-                            GeneralGuidance.Instance.materialReportArray[i, j, 2] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
-                        }
+            if (dialogue.StartsWith("Tebrikler, rapor başarılı!")) {
+                NavigationArrows.SetActive(true);
+                Report.SetActive(false);
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 2; j++) {
+                        GeneralGuidance.Instance.materialReportArray[i, j, 1] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
+                        GeneralGuidance.Instance.materialReportArray[i, j, 2] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
                     }
                 }
+            }
 
-                if (dialogue.StartsWith("Sen raporu hazırlarken")) {
-                    APA.SetActive(true);
-                    Light.SetActive(false);
-                    RubPanel.SetActive(false);
-                }
-                
-                if (dialogue.StartsWith("Hangi objelerin birbiriyle")) {
-                    NavigationArrows.SetActive(false);
-                    APA.SetActive(false);
-                    ChargePanel.SetActive(true);
-                    GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
-                    GeneralGuidance.Instance.rubbingMachine.slot1 = null;
-                    GeneralGuidance.Instance.rubbingMachine.slot2 = null;
-                    DeleteMaterials();
-                    Materials.SetActive(true);
-                    GeneralGuidance.Instance.report.ConvertToChargeAmounts();
-                    GeneralGuidance.Instance.report.dualityConstraint = false;
-                    GeneralGuidance.Instance.report.chargeObsConstraint = true;
-                    for (int i = 0; i < Report.transform.childCount; i++) {
-                        if (Report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
-                            draggable.canDrag = true;
-                        }
+            if (dialogue.StartsWith("Sen raporu hazırlarken")) {
+                GeneralGuidance.Instance.activityIndex = 2;
+                APA.SetActive(true);
+                Light.SetActive(false);
+                RubPanel.SetActive(false);
+            }
+
+            if (dialogue.StartsWith("Objeleri, rapordan merceğe ")) {
+                GeneralGuidance.Instance.notifyOnSnap = true;
+            }
+            
+            if (dialogue.StartsWith("Hangi objelerin birbiriyle")) {
+                NavigationArrows.SetActive(false);
+                APA.SetActive(false);
+                ChargePanel.SetActive(true);
+                GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
+                GeneralGuidance.Instance.rubbingMachine.slot1 = null;
+                GeneralGuidance.Instance.rubbingMachine.slot2 = null;
+                DeleteMaterials();
+                Materials.SetActive(true);
+                GeneralGuidance.Instance.report.ConvertToChargeAmounts();
+                GeneralGuidance.Instance.report.dualityConstraint = false;
+                GeneralGuidance.Instance.report.chargeObsConstraint = true;
+                for (int i = 0; i < Report.transform.childCount; i++) {
+                    if (Report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
+                        draggable.canDrag = true;
                     }
-                    evt.AddListener(NextDialogue);
-                    removeEvent = true;
                 }
+                evt.AddListener(NextDialogue);
+                removeEvent = true;
+            }
 
-                if (dialogue.StartsWith("Raporu bitirmişin")) {
-                    Report.SetActive(false);
-                    APA.SetActive(true);
-                    RubPanel.SetActive(false);
-                    NavigationArrows.SetActive(true);
-                }
-                
-                if (dialogue.StartsWith("Önem sırasına")) {
-                    GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomExterior;
-                }
-                
-                if (dialogue.StartsWith("Teknik rapora erişmen için")) {
-                    var index = GeneralGuidance.Instance.navbar.AddButton();
-                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
-                    GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
-                }
-                
-                
+            if (dialogue.StartsWith("Yazdığın yükler doğru görünüyor!")) {
+                GeneralGuidance.Instance.notifyOnSnap = false;
+            }
 
+            if (dialogue.StartsWith("Raporu bitirmişin")) {
+                Report.SetActive(false);
+                APA.SetActive(true);
+                RubPanel.SetActive(false);
+                NavigationArrows.SetActive(true);
+                GeneralGuidance.Instance.notifyOnSnap = false;
+            }
+            
+            if (dialogue.StartsWith("Önem sırasına")) {
+                GeneralGuidance.Instance.activityIndex = 3;
+                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomExterior;
+                GuidanceBackground.transform.GetChild(0).gameObject.SetActive(false);
+                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(true);
+                shouldChangeApaVisibility = false;
+            }
+
+            if (dialogue.StartsWith("Kapıda biraz")) {
+                ChargePanel.SetActive(true);
+                NavigationArrows.SetActive(true);
+                GuidanceBackground.transform.GetChild(1).GetComponent<ElectricSpecs>().OnShowVisualParticles();
+            }
+
+            if (dialogue.StartsWith("Kapıyı fazla yükünden")) {
+                NavigationArrows.SetActive(false);
+                APA.SetActive(false);
+            }
+
+            if (dialogue.StartsWith("Kapının net yükünü sıfırladın!")) {
+                ChargePanel.SetActive(false);
+                Report.SetActive(false);
+                APA.SetActive(true);
+                shouldChangeApaVisibility = true;
+                DeleteMaterials();
+                NavigationArrows.SetActive(true);
+                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+            }
+
+            if (dialogue.StartsWith("Burası yaşam destek odası.")) {
+                GeneralGuidance.Instance.activityIndex = 4;
+                GeneralGuidance.Instance.rubbingMachine.doOnce = true;
+                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomInterior;
+                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+                GuidanceBackground.transform.GetChild(2).gameObject.SetActive(true);
+                GuidanceBackground.transform.GetChild(2).GetComponent<ElectricSpecs>().OnShowVisualParticles();
+            }
+
+            if (dialogue.StartsWith("Yüklü tahtaya ancak")) {
+                APA.SetActive(false);
+                shouldChangeApaVisibility = false;
+                NavigationArrows.SetActive(false);
+                ChargePanel.SetActive(true);
+            }
+
+            if (dialogue.StartsWith("Paneli açığa çıkarmayı")) {
+                NavigationArrows.SetActive(true);
+                APA.SetActive(true);
+                Report.SetActive(false);
+                DeleteMaterials();
+                ChargePanel.SetActive(false);
+            }
+            
+            if (dialogue.StartsWith("Teknik rapora erişmen için")) {
+                NavigationArrows.SetActive(false);
+                var index = GeneralGuidance.Instance.navbar.AddButton();
+                GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
+                GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
+                evt.AddListener(NextDialogue);
+                removeEvent = true;
+            }
+
+            if (dialogue.StartsWith("Yardımın için teşekkür")) {
+                NavigationArrows.SetActive(true);
+            }
+
+            if (dialogue.StartsWith("Raporu oluşturup kısmen")) {
+                NavigationArrows.SetActive(false);
+            }
+
+            if (dialogue.StartsWith("Sistem raporu onayladı,")) {
+                NavigationArrows.SetActive(true);
+            }
+
+            if (dialogue.StartsWith("Nükleer reaktör bu kapının")) {
+                GeneralGuidance.Instance.activityIndex = 5;
+                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = ReactorExterior;
+                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+                GuidanceBackground.transform.GetChild(2).gameObject.SetActive(false);
+            }
+
+            if (dialogue.StartsWith("Nasıl görünüyor")) {
+                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = ReactorInterior;
+            }
+            
+            if (dialogue.StartsWith("Reaktörün üç yanında")) {
+                ChargePanel.SetActive(true);
+            }
+
+
+            if (apaTurn) {
                 if (APA.activeInHierarchy) {
                     APASpeech.SetActive(true);
                     TopSpeech.SetActive(false);
@@ -293,6 +383,10 @@ namespace SceneManagers {
                     BottomSpeech.SetActive(false);
                     TopSpeechTMP.text = Interpolator(dialogue);
                 }
+            } else if (playerTurn) {
+                APASpeech.SetActive(false);
+                BottomSpeech.SetActive(true);
+                BottomSpeechTMP.text = Interpolator(dialogue);
             }
         }
 
@@ -303,6 +397,7 @@ namespace SceneManagers {
                 //Ac3-20
                 if (dialogueIndex < 7) {
                     GeneralGuidance.Instance.allowDrag = true;
+                    NavigationArrows.SetActive(true);
                     if (GeneralGuidance.Instance.navbar.GetComponent<NavbarManager>().displayCount == 2) {
                         var index = GeneralGuidance.Instance.navbar.AddButton();
                         GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
@@ -317,6 +412,7 @@ namespace SceneManagers {
                     
                     GeneralGuidance.Instance.materialReportArray[2, 0, 0] = "-1||3,010964||3|1";
                     GeneralGuidance.Instance.materialReportArray[2, 1, 0] = "1||3,010964||1|3";
+                    GeneralGuidance.Instance.notifyOnSnap = true;
                     dialogueIndex = 6;
                     NextDialogue();
                     return;
@@ -324,6 +420,7 @@ namespace SceneManagers {
 
                 if (dialogueIndex < 20) {
                     Report.SetActive(false);
+                    GeneralGuidance.Instance.notifyOnSnap = false;
                     
                     GeneralGuidance.Instance.materialReportArray[0, 0, 0] = "1|1|3,010964||1|0";
                     GeneralGuidance.Instance.materialReportArray[0, 1, 0] = "-1|-1|3,010964||0|1";
@@ -347,6 +444,7 @@ namespace SceneManagers {
                     APA.SetActive(true);
                     Light.SetActive(false);
                     RubPanel.SetActive(false);
+                    NavigationArrows.SetActive(true);
                     ChargePanel.SetActive(true);
                     GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
                     GeneralGuidance.Instance.rubbingMachine.slot1 = null;
@@ -367,6 +465,23 @@ namespace SceneManagers {
                     NextDialogue();
                     return;
                 }
+
+                if (dialogueIndex < 25) {
+                    dialogueIndex = 26;
+                    NextDialogue();
+                    return;
+                }
+                
+                if (dialogueIndex < 36) {
+                    if (GeneralGuidance.Instance.navbar.GetComponent<NavbarManager>().displayCount == 3) {
+                        var index = GeneralGuidance.Instance.navbar.AddButton();
+                        GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
+                        GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
+                    }
+                    dialogueIndex = 37;
+                    NextDialogue();
+                    return;
+                }
             }
         }
 
@@ -374,6 +489,21 @@ namespace SceneManagers {
             if (GeneralGuidance.Instance.skipDialogueChargeS2) {
                 GeneralGuidance.Instance.skipDialogueChargeS2 = false;
                 NextDialogue();
+            }
+            
+            if (GeneralGuidance.Instance.skipDialogueRoomNeutral) {
+                GeneralGuidance.Instance.skipDialogueRoomNeutral = false;
+                NextDialogue();
+            }
+            
+            if (GeneralGuidance.Instance.dialogueRoomForceNegative) {
+                GeneralGuidance.Instance.dialogueRoomForceNegative = false;
+                SetDialogue("Olamaz, tahta sola kaydı!");
+            }
+            
+            if (GeneralGuidance.Instance.dialogueRoomForcePositive) {
+                GeneralGuidance.Instance.dialogueRoomForcePositive = false;
+                SetDialogue("Paneli açığa çıkarmayı başardın!");
             }
 
             if (GeneralGuidance.Instance.skipDialogueEngReport) {
@@ -383,19 +513,53 @@ namespace SceneManagers {
             }
         }
 
+        private bool shouldChangeApaVisibility = true;
+
         private void ToggleReport() {
-            APA.SetActive(Report.activeSelf);
+            if (shouldChangeApaVisibility) {
+                APA.SetActive(Report.activeSelf);
+            }
             Report.SetActive(!Report.activeSelf);
+            
+            if (APA.activeInHierarchy) {
+                APASpeech.SetActive(true);
+                TopSpeech.SetActive(false);
+                BottomSpeech.SetActive(false);
+                APASpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            } else {
+                APASpeech.SetActive(false);
+                TopSpeech.SetActive(true);
+                BottomSpeech.SetActive(false);
+                TopSpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            }
+            
             evt.Invoke();
         }
         
         private void ToggleEngReport() {
-            APA.SetActive(EngReport.activeSelf);
+            if (shouldChangeApaVisibility) {
+                APA.SetActive(EngReport.activeSelf);
+            }
             EngReport.SetActive(!EngReport.activeSelf);
+            
+            if (APA.activeInHierarchy) {
+                APASpeech.SetActive(true);
+                TopSpeech.SetActive(false);
+                BottomSpeech.SetActive(false);
+                APASpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            } else {
+                APASpeech.SetActive(false);
+                TopSpeech.SetActive(true);
+                BottomSpeech.SetActive(false);
+                TopSpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            }
+            
             evt.Invoke();
         }
 
         private string Interpolator(string dialogue) {
+            dialogue = dialogue.TrimStart("A_");
+            dialogue = dialogue.TrimStart("P_");
             dialogue = dialogue.Replace("$NAME$", GeneralGuidance.Instance.playerName.Split(" ")[0].Trim(' '));
             dialogue = dialogue.Replace("$FULL_NAME$", GeneralGuidance.Instance.playerName);
             return dialogue;

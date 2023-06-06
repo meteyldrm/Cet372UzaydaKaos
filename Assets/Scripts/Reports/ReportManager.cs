@@ -39,6 +39,12 @@ namespace Reports {
             InstantiateElectricChildren(currentPage);
             transform.GetChild(3).GetChild(2).GetComponent<TMP_Text>().text = $"Sürtme süresi:\n{3 + 2 * currentPage} saniye";
         }
+
+        private void OnEnable() {
+            DeleteElectricChildren();
+            InstantiateElectricChildren(currentPage);
+            transform.GetChild(3).GetChild(2).GetComponent<TMP_Text>().text = $"Sürtme süresi:\n{3 + 2 * currentPage} saniye";
+        }
         #endregion
 
         private bool callMouseUp;
@@ -94,6 +100,7 @@ namespace Reports {
                 
                 snapList.Add(specs.materialID);
                 specs.snapped = true;
+                GeneralGuidance.Instance.audio.PlayOneShot(snapClip);
                 //GeneralGuidance.Instance.report.SmartInstantiateElectricChild(specs.gameObject.GetComponent<Draggable>().FakeParent);
                 return true;
             }
@@ -101,10 +108,10 @@ namespace Reports {
             if (chargeObsConstraint) {
                 
             }
-
-            Debug.LogError("ReportManager Duality | This should never trigger");
             return false;
         }
+
+        public AudioClip snapClip;
 
         public bool OnLeaveReport(int materialID) {
             if (dualityConstraint) {
@@ -253,8 +260,6 @@ namespace Reports {
                 var tr = transform.GetChild(0).GetChild(i).GetChild(j);
                 tr.GetChild(0).GetComponent<TMP_InputField>().text = x[1];
                 SetMaterialFieldBackground(i, j);
-            } else {
-                print("Duality is true");
             }
             var subParent = transform.GetChild(0).GetChild(i).GetChild(j);
             var obj = Instantiate(GeneralGuidance.Instance.MaterialPrefabList[int.Parse(id)], GeneralGuidance.Instance.report.gameObject.transform, true);
@@ -263,6 +268,10 @@ namespace Reports {
             var drg = obj.GetComponent<Draggable>();
             drg.SetInterceptColliderSize(true);
             drg.FakeParent = subParent.gameObject;
+            var spc = obj.GetComponent<ElectricSpecs>();
+            spc.canCharge = true;
+            spc.canRub = true;
+            spc.canContact = true;
         }
     }
 }

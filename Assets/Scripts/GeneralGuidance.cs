@@ -22,15 +22,26 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		"Turbine"
 	};
 
+	public int activityIndex = -1;
 	private int scenarioIndex = -1;
 	public ReportManager report;
 	public EngReportManager engReport;
 	public RubbingMachineManager rubbingMachine;
 	public NavbarManager navbar;
 	public AlertController alert;
+	public GameObject helpPanel;
+	public AudioSource audio;
+	public void ToggleHelpPanel() {
+		helpPanel.SetActive(!helpPanel.activeSelf);
+	}
 
+	public bool notifyOnSnap = true;
+	
 	public bool skipDialogueChargeS2 = false;
 	public bool skipDialogueEngReport = false;
+	public bool skipDialogueRoomNeutral = false;
+	public bool dialogueRoomForceNegative = false;
+	public bool dialogueRoomForcePositive = false;
 
 	public bool allowDrag = false;
 
@@ -185,8 +196,10 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		}
 		#endregion
 
+		audio = GetComponent<AudioSource>();
+
 		//Skip chapter
-		scenarioIndex = 1;
+		scenarioIndex = -1;
 		LoadNextScenario();
 	}
 
@@ -194,6 +207,7 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		if (skipActivity) {
 			skipActivity = false;
 			if (scenarioIndex > 1) {
+				playerName = "Admin Test";
 				return;
 			}
 			

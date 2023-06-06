@@ -13,7 +13,7 @@ namespace UI {
         private bool updateText;
 
         public bool canToggle = false;
-        private bool doOnce = false;
+        public bool doOnce = false;
 
         public ElectricSpecs slot1;
         public ElectricSpecs slot2;
@@ -84,7 +84,9 @@ namespace UI {
                 if (slot1.accumulatedTime > 2.99f) {
                     if (!doOnce) {
                         doOnce = true;
-                        GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                        if (GeneralGuidance.Instance.activityIndex == 1 || GeneralGuidance.Instance.activityIndex == 2) {
+                            GeneralGuidance.Instance.skipDialogueChargeS2 = true;
+                        }
                     }
                 }
             }

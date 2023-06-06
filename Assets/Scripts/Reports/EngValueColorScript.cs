@@ -18,7 +18,6 @@ namespace Reports {
             
             var text = dropdown.options[dropdown.value].text;
             if (text == gameObject.name) {
-                print($"{text} matches {gameObject.name}");
                 image.color = Color.HSVToRGB(115f / 360f, 35f / 100f, 95f / 100f);
                 return true;
             } else if (text == "?") {

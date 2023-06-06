@@ -6,6 +6,7 @@ TagManager:
   tags:
   - ReportCollider
   - RubMachineCollider
+  - ContactNeutral
   layers:
   - Default
   - TransparentFX
