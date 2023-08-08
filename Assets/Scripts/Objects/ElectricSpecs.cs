@@ -28,49 +28,49 @@ namespace Objects {
 		public float electronDensity;
 		
 		public float accumulatedTime;
-		private bool rubbing;
+		private bool _rubbing;
 		public int rubbingMaterialID;
-		[NonSerialized] public ElectricSpecs conjugateItem = null;
-		[NonSerialized] public bool isActiveObject;
+		[NonSerialized] public ElectricSpecs ConjugateItem = null;
+		[NonSerialized] public bool IsActiveObject;
 		
 		public bool canCharge = true;
 		public bool canRub;
 		public bool canContact;
 		public bool hasElectrostaticForce;
 
-		private Rigidbody2D rb;
-		private Draggable drag;
-		private bool configured;
+		private Rigidbody2D _rb;
+		private Draggable _drag;
+		private bool _configured;
 
-		private Coroutine chargingTriggerCoroutine = null;
-		private bool triggerIntercept = false;
+		private Coroutine _chargingTriggerCoroutine = null;
+		private bool _triggerIntercept = false;
 
-		private bool showParticles;
+		private bool _showParticles;
 		public bool snapped = false;
 
-		private bool wentLeft = false;
-		private bool wentRight = false;
+		private bool _wentLeft = false;
+		private bool _wentRight = false;
 
 		private void Start() {
-			if (configured) return;
-			rb = GetComponent<Rigidbody2D>();
-			drag = GetComponent<Draggable>();
+			if (_configured) return;
+			_rb = GetComponent<Rigidbody2D>();
+			_drag = GetComponent<Draggable>();
 			if (electronDensity == 0) {
 				electronDensity = protonDensity;
 			}
 
-			configured = true;
+			_configured = true;
 		}
 
 		private void OnEnable() {
-			if (configured) return;
-			rb = GetComponent<Rigidbody2D>();
-			drag = GetComponent<Draggable>();
+			if (_configured) return;
+			_rb = GetComponent<Rigidbody2D>();
+			_drag = GetComponent<Draggable>();
 			if (electronDensity == 0) {
 				electronDensity = protonDensity;
 			}
 
-			configured = true;
+			_configured = true;
 		}
 
 		private void Update() {
@@ -110,39 +110,39 @@ namespace Objects {
 		private void OnTriggerEnter2D(Collider2D col) {
 			if (col.CompareTag("ReportCollider")) return;
 			if (col.CompareTag("RubMachineCollider")) return;
-			isActiveObject = drag != null && drag.dragging;
-			if (isActiveObject) {
-				if (col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
-					if (canCharge) {
-						triggerIntercept = true;
-						if (canContact && specs.canContact) {
-							chargingTriggerCoroutine = StartCoroutine(invokeChargingWithDelay(specs));
-						}
-					
-						// if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
-						// 	rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
-						// }
+			IsActiveObject = _drag != null && _drag.dragging;
+			if (IsActiveObject) {
+				// ReSharper disable once InvertIf
+				if (col.gameObject.TryGetComponent(out ElectricSpecs specs) && canCharge) {
+					_triggerIntercept = true;
+					if (canContact && specs.canContact) {
+						_chargingTriggerCoroutine = StartCoroutine(InvokeChargingWithDelay(specs));
 					}
+					
+					// if (canRub && specs.canRub && (Math.Sign(chargeAffinity * specs.chargeAffinity) == -1)) {
+					// 	rubbingTriggerCoroutine = StartCoroutine(invokeRubbingWithDelay(specs));
+					// }
 				}
 			} else if (hasElectrostaticForce) {
+				// ReSharper disable once InvertIf
 				if(TryGetComponent(out RectTransform rt) && col.gameObject.TryGetComponent(out ElectricSpecs specs)) {
 					var rp = rt.position;
 
-					if (specs.getEffectiveCharge() == 0) {
+					if (specs.GetEffectiveCharge() == 0) {
 						return;
 					}
 
-					if (Mathf.FloorToInt(Mathf.Sign(specs.getEffectiveCharge())) == Mathf.FloorToInt(Mathf.Sign(getEffectiveCharge()))) {
+					if (Mathf.FloorToInt(Mathf.Sign(specs.GetEffectiveCharge())) == Mathf.FloorToInt(Mathf.Sign(GetEffectiveCharge()))) {
 						rp.x += 0.8f;
 						rt.position = rp;
-						wentRight = true;
+						_wentRight = true;
 						GeneralGuidance.Instance.dialogueRoomForcePositive = true;
 						hasElectrostaticForce = false;
-						wentRight = false; //Make the object appear on the right permanently
+						_wentRight = false; //Make the object appear on the right permanently
 					} else {
 						rp.x -= 0.8f;
 						rt.position = rp;
-						wentLeft = true;
+						_wentLeft = true;
 						GeneralGuidance.Instance.dialogueRoomForceNegative = true;
 					}
 				}
@@ -150,34 +150,36 @@ namespace Objects {
 		}
 
 		private void OnTriggerExit2D(Collider2D other) {
-			if (other.CompareTag("ReportCollider") && gameObject.activeSelf && drag.dragging) {
+			if (other.CompareTag("ReportCollider") && gameObject.activeSelf && _drag.dragging) {
+				// ReSharper disable once InvertIf
 				if (GeneralGuidance.Instance.report.OnLeaveReport(materialID) && snapped) { //If the object was snapped before
 					accumulatedTime = 0;
 					snapped = false;
 				}
 			} else if (other.CompareTag("RubMachineCollider")) {
-				if (other.gameObject.name == "Slut1") {
-					GeneralGuidance.Instance.rubbingMachine.slot1 = null;
+				switch (other.gameObject.name) {
+					case "Slut1":
+						GeneralGuidance.Instance.rubbingMachine.slot1 = null;
+						break;
+					case "Slut2":
+						GeneralGuidance.Instance.rubbingMachine.slot2 = null;
+						break;
 				}
-				
-				if (other.gameObject.name == "Slut2") {
-					GeneralGuidance.Instance.rubbingMachine.slot2 = null;
-				}
-				
+
 				// if (other.gameObject.name == "ChargePanel") {
 				// 	GeneralGuidance.Instance.rubbingMachine.slot2 = null;
 				// }
 			} else if(TryGetComponent(out RectTransform rt)) {
-				if (wentLeft) {
+				if (_wentLeft) {
 					var rp = rt.position;
 					rp.x += 0.8f;
 					rt.position = rp;
-					wentLeft = false;
-				} else if(wentRight) {
+					_wentLeft = false;
+				} else if(_wentRight) {
 					var rp = rt.position;
 					rp.x -= 0.8f;
 					rt.position = rp;
-					wentRight = false;
+					_wentRight = false;
 				}
 			}
 		}
@@ -191,17 +193,17 @@ namespace Objects {
 		/// </summary>
 		/// <param name="specs"></param>
 		private void OnStartRubbing(ElectricSpecs specs) {
-			rubbing = true;
-			bool doOnce = false;
+			_rubbing = true;
+			var doOnce = false;
 			if (canCharge) {
-				if (conjugateItem != specs) {
-					conjugateItem = specs;
+				if (ConjugateItem != specs) {
+					ConjugateItem = specs;
 					doOnce = true;
-					specs.conjugateItem = this;
+					specs.ConjugateItem = this;
 					specs.rubbingMaterialID = materialID;
 					rubbingMaterialID = specs.materialID;
 					accumulatedTime = 0;
-					conjugateItem.accumulatedTime = 0;
+					ConjugateItem.accumulatedTime = 0;
 				}
 			} else {
 				return;
@@ -213,21 +215,22 @@ namespace Objects {
 
 		private IEnumerator _rubForOneSecond(ElectricSpecs specs) {
 			var delta = 0f;
-			if (!rubbing) {
+			// ReSharper disable once InvertIf
+			if (!_rubbing) {
 				OnStartRubbing(specs);
 				while (delta < 1f) {
-					if (canCharge && limit > 0) {
-						if(timeDelta < timeLimit) {
-							timeDelta += Time.deltaTime;
+					if (canCharge && _limit > 0) {
+						if(_timeDelta < _timeLimit) {
+							_timeDelta += Time.deltaTime;
 						} else {
-							timeDelta = 0f;
-							limit--;
+							_timeDelta = 0f;
+							_limit--;
 							electronDensity -= Mathf.Sign(chargeAffinity);
-							conjugateItem.electronDensity -= Mathf.Sign(conjugateItem.chargeAffinity);
+							ConjugateItem.electronDensity -= Mathf.Sign(ConjugateItem.chargeAffinity);
 						}
 				
 						accumulatedTime += Time.deltaTime;
-						conjugateItem.accumulatedTime += Time.deltaTime;
+						ConjugateItem.accumulatedTime += Time.deltaTime;
 					}
 					delta += Time.deltaTime;
 					OnChangeVisualParticles();
@@ -244,20 +247,20 @@ namespace Objects {
 		}
 
 		private void OnStopRubbing(ElectricSpecs specs) {
-			rubbing = false;
-			didOnceForRubbing = false;
+			_rubbing = false;
+			_didOnceForRubbing = false;
 			specs.accumulatedTime = accumulatedTime;
 			OnChangeVisualParticles();
 			specs.OnChangeVisualParticles();
 		}
 		
 		public void OnResetRubbing() {
-			isActiveObject = false;
-			rubbing = false;
+			IsActiveObject = false;
+			_rubbing = false;
 			electronDensity = protonDensity;
 			accumulatedTime = 0;
 			rubbingMaterialID = -1;
-			didOnceForRubbing = false;
+			_didOnceForRubbing = false;
 			OnChangeVisualParticles();
 		}
 
@@ -268,14 +271,14 @@ namespace Objects {
 		/// <param name="specs"></param>
 		/// <param name="chargeOverride"></param>
 		private void DoContactCharging(ElectricSpecs specs, bool chargeOverride = false) {
-			if (isActiveObject && canCharge && specs.canCharge && ((canContact && specs.canContact) || chargeOverride)) {
+			if (IsActiveObject && canCharge && specs.canCharge && ((canContact && specs.canContact) || chargeOverride)) {
 				//Individual proton count does not affect accumulated charge. It's only to determine the neutral point of the material.
 				//Delta = (1-(total ED/total PD)) * sign * (avgAffinity)
-				var delta = Mathf.Floor((getEffectiveCharge() + specs.getEffectiveCharge())/2);
-				var conjugateDelta = Mathf.Ceil((getEffectiveCharge() + specs.getEffectiveCharge())/2);
+				var delta = Mathf.Floor((GetEffectiveCharge() + specs.GetEffectiveCharge())/2);
+				var conjugateDelta = Mathf.Ceil((GetEffectiveCharge() + specs.GetEffectiveCharge())/2);
 				electronDensity = protonDensity - delta;
 				specs.electronDensity = specs.protonDensity - conjugateDelta;
-				if (specs.TryGetComponent(out Lightbulb bulb)) {
+				if (specs.TryGetComponent(out LightBulb bulb)) {
 					if (conjugateDelta is > 0 or < 0 || delta is > 0 or < 0) {
 						bulb.LightUp();
 					}
@@ -290,68 +293,68 @@ namespace Objects {
 			specs.OnChangeVisualParticles();
 		}
 		
-		private IEnumerator invokeChargingWithDelay(ElectricSpecs material) {
-			if (material.TryGetComponent(out Lightbulb bulb)) {
+		private IEnumerator InvokeChargingWithDelay(ElectricSpecs material) {
+			if (material.TryGetComponent(out LightBulb bulb)) {
 				yield return new WaitForSeconds(0.6f);
 			} else {
 				yield return new WaitForSeconds(1.2f);
 			}
-			if (triggerIntercept) DoContactCharging(material);
+			if (_triggerIntercept) DoContactCharging(material);
 		}
 
-		private IEnumerator invokeRubbingWithDelay(ElectricSpecs material) {
+		private IEnumerator InvokeRubbingWithDelay(ElectricSpecs material) {
 			if (accumulatedTime > 0) {
 				yield return new WaitForSeconds(2f);
 			} else {
 				yield return new WaitForSeconds(1f);
 			}
-			if (triggerIntercept) OnStartRubbing(material);
+			if (_triggerIntercept) OnStartRubbing(material);
 		}
 
-		private bool didOnceForRubbing;
-		private float limit;
-		private float timeDelta;
-		private float timeLimit;
+		private bool _didOnceForRubbing;
+		private float _limit;
+		private float _timeDelta;
+		private float _timeLimit;
 		private void doOnceForRubbing(bool doOnce) {
-			if (!didOnceForRubbing) {
-				rubbingMaterialID = conjugateItem.materialID;
-				conjugateItem.rubbingMaterialID = materialID;
-				if(doOnce) DoContactCharging(conjugateItem, true);
-				didOnceForRubbing = true;
+			if (!_didOnceForRubbing) {
+				rubbingMaterialID = ConjugateItem.materialID;
+				ConjugateItem.rubbingMaterialID = materialID;
+				if(doOnce) DoContactCharging(ConjugateItem, true);
+				_didOnceForRubbing = true;
 				if (chargeAffinity > 0) {
-					limit = electronDensity - 1;
-				} else if (conjugateItem.chargeAffinity > 0) {
-					limit = conjugateItem.electronDensity - 1;
+					_limit = electronDensity - 1;
+				} else if (ConjugateItem.chargeAffinity > 0) {
+					_limit = ConjugateItem.electronDensity - 1;
 				}
-				timeDelta = 0f;
-				timeLimit = 5f / (Mathf.Abs(chargeAffinity) + Mathf.Abs(conjugateItem.chargeAffinity));
+				_timeDelta = 0f;
+				_timeLimit = 5f / (Mathf.Abs(chargeAffinity) + Mathf.Abs(ConjugateItem.chargeAffinity));
 			}
 		}
 
-		public void resetRubbingPosition() {
-			if (!configured) {
-				rb = GetComponent<Rigidbody2D>();
-				drag = GetComponent<Draggable>();
+		public void ResetRubbingPosition() {
+			if (!_configured) {
+				_rb = GetComponent<Rigidbody2D>();
+				_drag = GetComponent<Draggable>();
 				if (electronDensity == 0) {
 					electronDensity = protonDensity;
 				}
 
-				configured = true;
+				_configured = true;
 			}
 			
-			rb.position = drag.dragStartPosition;
+			_rb.position = _drag.dragStartPosition;
 			
 			//TODO: Check if this triggers report colliders. We need to instantiate from the report, not drag from it.
 		}
 
-		public float getEffectiveCharge() {
+		public float GetEffectiveCharge() {
 			return protonDensity - electronDensity;
 		}
 
 		public void OnShowVisualParticles() {
-			showParticles = true;
+			_showParticles = true;
 			if (TryGetComponent(out Image img)) {
-				Color.RGBToHSV(img.color, out float h, out float s, out float v);
+				Color.RGBToHSV(img.color, out var h, out var s, out var v);
 				img.color = Color.HSVToRGB(h, s, 65);
 			}
 			foreach (Transform tr in transform) {
@@ -363,9 +366,9 @@ namespace Objects {
 		}
 		
 		public void OnHideVisualParticles() {
-			showParticles = false;
+			_showParticles = false;
 			var img = GetComponent<Image>();
-			Color.RGBToHSV(img.color, out float h, out float s, out float v);
+			Color.RGBToHSV(img.color, out var h, out var s, out var v);
 			img.color = Color.HSVToRGB(h, s, 100);
 			foreach (Transform tr in transform) {
 				if (tr.gameObject.name.ToLowerInvariant() is "positives" or "negatives") {
@@ -373,15 +376,18 @@ namespace Objects {
 				}
 			}
 		}
-		
-		public void OnChangeVisualParticles() {
-			if (!showParticles) return;
+
+		private void OnChangeVisualParticles() {
+			if (!_showParticles) return;
 			foreach (Transform tr in transform) {
-				for (int i = 0; i < tr.childCount; i++) {
-					if (tr.gameObject.name.ToLowerInvariant() == "positives") {
-						tr.GetChild(i).gameObject.SetActive(i < protonDensity);
-					} else if (tr.gameObject.name.ToLowerInvariant() == "negatives") {
-						tr.GetChild(i).gameObject.SetActive(i < electronDensity);
+				for (var i = 0; i < tr.childCount; i++) {
+					switch (tr.gameObject.name.ToLowerInvariant()) {
+						case "positives":
+							tr.GetChild(i).gameObject.SetActive(i < protonDensity);
+							break;
+						case "negatives":
+							tr.GetChild(i).gameObject.SetActive(i < electronDensity);
+							break;
 					}
 				}
 			}

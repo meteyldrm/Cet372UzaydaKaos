@@ -1,15 +1,10 @@
-using System;
-using System.Globalization;
 using UnityEngine;
 
 namespace Reports {
     public class EngReportManager : MonoBehaviour {
-
-        
-        
-        private int correctCount = 0;
-        private bool notified = false;
-        private int part = 1;
+        private int _correctCount = 0;
+        private bool _notified = false;
+        private int _part = 1;
         //
         // public bool OnSnap(string value, GameObject parent) {
         //     if (value == parent.name.ToLower(CultureInfo.InvariantCulture)) {
@@ -21,39 +16,40 @@ namespace Reports {
         // }
         //
         private void OnEnable() {
-            notified = false;
-            if (part < 2) {
-                transform.GetChild(0).GetChild(part - 1).gameObject.SetActive(true);
+            _notified = false;
+            if (_part < 2) {
+                transform.GetChild(0).GetChild(_part - 1).gameObject.SetActive(true);
             }
         }
 
         public void UpdateColors() {
-            correctCount = 0;
-            foreach (Transform tr in transform.GetChild(0).GetChild(part - 1).GetChild(1).transform) {
+            _correctCount = 0;
+            foreach (Transform tr in transform.GetChild(0).GetChild(_part - 1).GetChild(1).transform) {
                 if(tr.gameObject.TryGetComponent(out EngValueColorScript cs)) {
                     var x = cs.OnUpdateColor();
 
                     if (x) {
-                        correctCount++;
+                        _correctCount++;
                     }
                 } else {
-                    Debug.LogError("Object had no colorscript");
+                    Debug.LogError("Object had no color script");
                 }
             }
         }
         
         private void LateUpdate() {
-            if (part == 1 && correctCount == transform.GetChild(0).GetChild(part - 1).GetChild(1).childCount && !notified) {
-                notified = true;
-                part++;
-                correctCount = 0;
+            if (_part == 1 && _correctCount == transform.GetChild(0).GetChild(_part - 1).GetChild(1).childCount && !_notified) {
+                _notified = true;
+                _part++;
+                _correctCount = 0;
                 GeneralGuidance.Instance.skipDialogueEngReport = true;
             }
             
-            if (part == 2 && correctCount == transform.GetChild(0).GetChild(part - 1).GetChild(1).childCount && !notified) {
-                notified = true;
-                part++;
-                correctCount = 0;
+            // ReSharper disable once InvertIf
+            if (_part == 2 && _correctCount == transform.GetChild(0).GetChild(_part - 1).GetChild(1).childCount && !_notified) {
+                _notified = true;
+                _part++;
+                _correctCount = 0;
                 GeneralGuidance.Instance.skipDialogueEngReport = true;
             }
         }

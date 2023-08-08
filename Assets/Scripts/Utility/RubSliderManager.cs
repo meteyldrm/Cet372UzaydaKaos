@@ -12,9 +12,7 @@ namespace Utility {
 		}
 
 		public void SlideForOneSecond() {
-			if (_coroutine == null) {
-				_coroutine = StartCoroutine(_slideForOneSecond());
-			}
+			_coroutine ??= StartCoroutine(_slideForOneSecond());
 		}
 
 		private IEnumerator _slideForOneSecond() {

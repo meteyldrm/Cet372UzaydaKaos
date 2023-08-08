@@ -2,10 +2,9 @@
 // ReSharper disable file IdentifierTypo
 
 using System;
-using SceneManagers;
-using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // Modified from https://github.com/meteyldrm/CET49A-BasketballAir/blob/master/Assets/Scripts/Draggable.cs
 
@@ -27,72 +26,72 @@ namespace Objects {
     /// Is a circle collider appropriate for every material? Playtest with ElectricSpecs accumulation is necessary.
     /// </summary>
     public class Draggable : MonoBehaviour {
-        private Rigidbody2D rb;
-        private Camera cam;
-        private GameObject reportCollider;
-        private GameObject engReportCollider;
-        private GameObject rubbingCollider;
+        private Rigidbody2D _rb;
+        private Camera _cam;
+        private GameObject _reportCollider;
+        private GameObject _engReportCollider;
+        private GameObject _rubbingCollider;
     
         public bool canDrag = true;
 
         public bool dragging;
-        private Vector2 guidanceStartPosition;
+        private Vector2 _guidanceStartPosition;
         public Vector2 dragStartPosition;
-        private Vector2 interceptOffset = Vector2.zero;
+        private Vector2 _interceptOffset = Vector2.zero;
 
-        private float lerpTime;
-        private Vector2 screenVector;
+        private float _lerpTime;
+        private Vector2 _screenVector;
         
-        private const float smoothingStrength = 0.3f;
-        private Collider2D selfCollider;
-        public colliderTypeV2 colliderType;
+        private const float SmoothingStrength = 0.3f;
+        private Collider2D _selfCollider;
+        public ColliderTypeV2 colliderType;
 
-        private bool scaled;
-        private bool parented;
-        private bool snapped;
+        private bool _scaled;
+        private bool _parented;
+        private bool _snapped;
 
-        private bool skippedOnce = false;
+        private bool _skippedOnce = false;
 
-        public GameObject FakeParent;
+        [FormerlySerializedAs("FakeParent")] public GameObject fakeParent;
     
         private void Awake() {
-            var _rb = gameObject.GetComponent<Rigidbody2D>();
-            var _selfCollider = GetComponent<Collider2D>();
+            var tempRb = gameObject.GetComponent<Rigidbody2D>();
+            var tempCollider = GetComponent<Collider2D>();
 
-            if (_rb == null) {
+            if (tempRb == null) {
                 gameObject.AddComponent<Rigidbody2D>();
-                _rb = GetComponent<Rigidbody2D>();
-                _rb.gravityScale = 0f;
+                tempRb = GetComponent<Rigidbody2D>();
+                tempRb.gravityScale = 0f;
             }
             
-            if (_selfCollider == null && colliderType == colliderTypeV2.Circle) {
+            if (_selfCollider == null && colliderType == ColliderTypeV2.Circle) {
                 _selfCollider = gameObject.AddComponent<CircleCollider2D>();
                 ((CircleCollider2D)_selfCollider).radius = 60f;
                 _selfCollider.isTrigger = true;
-            } else if (_selfCollider == null && colliderType == colliderTypeV2.Box) {
+            } else if (_selfCollider == null && colliderType == ColliderTypeV2.Box) {
                 _selfCollider = gameObject.AddComponent<BoxCollider2D>();
                 ((BoxCollider2D)_selfCollider).size = new Vector2(70, 70);
                 ((BoxCollider2D)_selfCollider).edgeRadius = 0.15f;
                 _selfCollider.isTrigger = true;
             }
             
-            rb = _rb;
-            selfCollider = _selfCollider;
-            cam = Camera.main;
-            guidanceStartPosition = rb.position;
+            _rb = tempRb;
+            _selfCollider = tempCollider;
+            _cam = Camera.main;
+            _guidanceStartPosition = _rb.position;
         }
 
         private void OnDisable() {
-            lerpTime = 0;
+            _lerpTime = 0;
         }
 
         private void OnEnable() {
-            if (rb == null) {
-                rb = gameObject.GetComponent<Rigidbody2D>();
+            if (_rb == null) {
+                _rb = gameObject.GetComponent<Rigidbody2D>();
             }
 
-            if (selfCollider == null) {
-                selfCollider = GetComponent<Collider2D>();
+            if (_selfCollider == null) {
+                _selfCollider = GetComponent<Collider2D>();
             }
         }
 
@@ -107,67 +106,70 @@ namespace Objects {
                 switch (state) {
                     case true: {
                         var position = (Vector2) transform.position;
-                        interceptOffset = spaceVector - position;
-                        screenVector = position - interceptOffset;
-                        doDrag(true);
-                        if (TryGetComponent(out ElectricSpecs _) && !GeneralGuidance.Instance.report.dualityConstraint && reportCollider != null) {
-                            GeneralGuidance.Instance.report.SmartInstantiateElectricChild(FakeParent);
+                        _interceptOffset = spaceVector - position;
+                        _screenVector = position - _interceptOffset;
+                        DoDrag(true);
+                        if (TryGetComponent(out ElectricSpecs _) && !GeneralGuidance.Instance.report.dualityConstraint && _reportCollider != null) {
+                            GeneralGuidance.Instance.report.SmartInstantiateElectricChild(fakeParent);
                         }
                         break;
                     }
                     case false: {
-                        interceptOffset = spaceVector;
-                        screenVector = spaceVector;
-                        doDrag(false);
+                        _interceptOffset = spaceVector;
+                        _screenVector = spaceVector;
+                        DoDrag(false);
                         break;
                     }
                 }
             }
 
+            // ReSharper disable once InvertIf
             if (dragging && !state) {
-                interceptOffset = spaceVector;
-                screenVector = spaceVector;
-                doDrag(false);
+                _interceptOffset = spaceVector;
+                _screenVector = spaceVector;
+                DoDrag(false);
             }
         }
 
         private void OnMouseDown() {
-            SetInteractionState(true, cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
+            SetInteractionState(true, _cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(_cam.transform.position.z))));
         }
 
         private void OnMouseDrag() {
+            // ReSharper disable once InvertIf
             if (dragging) {
-                SetTransformGoal(cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(cam.transform.position.z))));
-                interceptOffset = Vector2.Lerp(interceptOffset, Vector2.zero, lerpTime);
-                lerpTime += Time.fixedDeltaTime / (smoothingStrength * 50);
-                rb.velocity = (screenVector - rb.position) / (Time.fixedDeltaTime * smoothingStrength * 10);
+                SetTransformGoal(_cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, math.abs(_cam.transform.position.z))));
+                _interceptOffset = Vector2.Lerp(_interceptOffset, Vector2.zero, _lerpTime);
+                _lerpTime += Time.fixedDeltaTime / (SmoothingStrength * 50);
+                _rb.velocity = (_screenVector - _rb.position) / (Time.fixedDeltaTime * SmoothingStrength * 10);
             }
         }
 
         private void OnMouseUp() {
+            // ReSharper disable once InvertIf
             if (dragging) {
-                if (reportCollider != null) {
+                if (_reportCollider != null) {
                     if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
-                        if (!GeneralGuidance.Instance.report.OnSnap(specs, reportCollider, reportCollider.transform.parent.gameObject)) {
+                        if (!GeneralGuidance.Instance.report.OnSnap(specs, _reportCollider, _reportCollider.transform.parent.gameObject)) {
                             SetInteractionState(false, Vector2.zero);
-                            specs.resetRubbingPosition();
+                            specs.ResetRubbingPosition();
                             return;
                         }
                         SetInteractionState(false, Vector2.zero);
                         transform.SetParent(GeneralGuidance.Instance.report.gameObject.transform, true);
                         try {
-                            FakeParent = reportCollider.gameObject;
+                            fakeParent = _reportCollider.gameObject;
                         } catch (NullReferenceException) {
-                            FakeParent = GeneralGuidance.Instance.report.gameObject;
+                            fakeParent = GeneralGuidance.Instance.report.gameObject;
                         }
-                        parented = true;
+                        _parented = true;
                         try {
-                            transform.position = reportCollider.GetComponent<BoxCollider2D>().bounds.center;
+                            transform.position = _reportCollider.GetComponent<BoxCollider2D>().bounds.center;
                         } catch (NullReferenceException) {
                         }
                         canDrag = false;
-                        var obj = Instantiate(GeneralGuidance.Instance.MaterialPrefabList[specs.materialID], GeneralGuidance.GetSceneGameObjectByName("Materials", 2).transform);
-                        obj.transform.position = guidanceStartPosition;
+                        var obj = Instantiate(GeneralGuidance.Instance.materialPrefabList[specs.materialID], GeneralGuidance.GetSceneGameObjectByName("Materials", 2).transform);
+                        obj.transform.position = _guidanceStartPosition;
                         var componentSpecs = obj.GetComponent<ElectricSpecs>();
                         componentSpecs.canCharge = true;
                         componentSpecs.canRub = true;
@@ -177,50 +179,53 @@ namespace Objects {
                     SetInteractionState(false, Vector2.zero);
                 }
                 
-                if (rubbingCollider != null) {
+                if (_rubbingCollider != null) {
+                    // ReSharper disable once InvertIf
                     if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
-                        if (rubbingCollider.gameObject.name == "Slut1") {
+                        // ReSharper disable once ConvertIfStatementToSwitchStatement
+                        if (_rubbingCollider.gameObject.name == "Slut1") {
                             GeneralGuidance.Instance.rubbingMachine.slot1 = specs;
                             SetInteractionState(false, Vector2.zero);
-                            transform.position = rubbingCollider.transform.position;
+                            transform.position = _rubbingCollider.transform.position;
                         }
                         
-                        else if (rubbingCollider.gameObject.name == "Slut2") {
+                        else if (_rubbingCollider.gameObject.name == "Slut2") {
                             GeneralGuidance.Instance.rubbingMachine.slot2 = specs;
                             SetInteractionState(false, Vector2.zero);
-                            transform.position = rubbingCollider.transform.position;
+                            transform.position = _rubbingCollider.transform.position;
                         }
                         
-                        else if (rubbingCollider.gameObject.name == "ChargePanel") {
+                        else if (_rubbingCollider.gameObject.name == "ChargePanel") {
                             specs.OnShowVisualParticles();
                             if (GeneralGuidance.Instance.rubbingMachine.slot1 == null) {
                                 GeneralGuidance.Instance.rubbingMachine.slot1 = specs;
                                 specs.OnResetRubbing();
-                                if (!scaled) {
-                                    scaled = true;
+                                if (!_scaled) {
+                                    _scaled = true;
                                     gameObject.transform.localScale *= 2;
                                 }
                                 SetInteractionState(false, Vector2.zero);
-                                transform.SetParent(rubbingCollider.gameObject.transform, true);
-                                snapped = true;
+                                transform.SetParent(_rubbingCollider.gameObject.transform, true);
+                                _snapped = true;
                                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
                             } else if (GeneralGuidance.Instance.rubbingMachine.slot2 == null) {
                                 GeneralGuidance.Instance.rubbingMachine.slot2 = specs;
                                 specs.OnResetRubbing();
-                                if (!scaled) {
-                                    scaled = true;
+                                if (!_scaled) {
+                                    _scaled = true;
                                     gameObject.transform.localScale *= 2;
                                 }
                                 SetInteractionState(false, Vector2.zero);
-                                transform.SetParent(rubbingCollider.gameObject.transform, true);
-                                snapped = true;
+                                transform.SetParent(_rubbingCollider.gameObject.transform, true);
+                                _snapped = true;
                                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
-                                if (!skippedOnce && GeneralGuidance.Instance.notifyOnSnap) {
+                                // ReSharper disable once InvertIf
+                                if (!_skippedOnce && GeneralGuidance.Instance.notifyOnSnap) {
                                     GeneralGuidance.Instance.skipDialogueChargeS2 = true;
-                                    skippedOnce = true;
+                                    _skippedOnce = true;
                                 }
                             } else { //Add non-interactive temporal snapping, reset position causing issues when moving n=2
-                                if(!snapped) specs.resetRubbingPosition();
+                                if(!_snapped) specs.ResetRubbingPosition();
                                 SetInteractionState(false, Vector2.zero);
                             }
                         }
@@ -233,32 +238,34 @@ namespace Objects {
 
         private void OnTriggerEnter2D(Collider2D col) {
             if (col.CompareTag("ReportCollider")) {
-                reportCollider = col.gameObject;
+                _reportCollider = col.gameObject;
                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
             }
             
+            // ReSharper disable once InvertIf
             if (col.CompareTag("RubMachineCollider")) {
-                rubbingCollider = col.gameObject;
+                _rubbingCollider = col.gameObject;
                 gameObject.transform.GetChild(0).gameObject.SetActive(false);
             }
         }
 
         private void OnTriggerExit2D(Collider2D col) {
             if (col.CompareTag("ReportCollider")) {
-                reportCollider = null;
+                _reportCollider = null;
                 gameObject.transform.GetChild(0).gameObject.SetActive(true);
-                if (parented && dragging) { //Current object parent is deactivating
+                if (_parented && dragging) { //Current object parent is deactivating
                     var obj = GeneralGuidance.GetSceneGameObjectByName("Materials", 2);
                     gameObject.transform.SetParent(obj.transform, true);
-                    FakeParent = null;
-                    parented = false;
+                    fakeParent = null;
+                    _parented = false;
                 }
             }
             
+            // ReSharper disable once InvertIf
             if (col.CompareTag("RubMachineCollider")) {
-                rubbingCollider = null;
-                if (scaled) {
-                    scaled = false;
+                _rubbingCollider = null;
+                if (_scaled) {
+                    _scaled = false;
                     gameObject.transform.localScale /= 2;
                     if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
                         specs.OnHideVisualParticles();
@@ -267,41 +274,41 @@ namespace Objects {
                 gameObject.transform.GetChild(0).gameObject.SetActive(true);
                 var obj = GeneralGuidance.GetSceneGameObjectByName("Materials", 2);
                 gameObject.transform.SetParent(obj.transform, true);
-                snapped = false;
+                _snapped = false;
             }
         }
 
         private void SetTransformGoal(Vector2 goal) {
-            screenVector = goal - interceptOffset;
+            _screenVector = goal - _interceptOffset;
         }
 
         //This is used when snapping in place
-        private void doDrag(bool state) {
+        private void DoDrag(bool state) {
             if (state) {
                 dragging = true;
-                dragStartPosition = rb.position;
+                dragStartPosition = _rb.position;
             } else {
                 try {
-                    rb.velocity = Vector2.zero;
+                    _rb.velocity = Vector2.zero;
                     dragging = false;
-                    interceptOffset = Vector2.zero;
-                    screenVector = Vector2.zero;
+                    _interceptOffset = Vector2.zero;
+                    _screenVector = Vector2.zero;
                 } catch (NullReferenceException) {
                 }
             }
         }
         
         public void SetInterceptColliderSize(bool makeSmaller) {
-            if (selfCollider != null && colliderType == colliderTypeV2.Circle) {
-                ((CircleCollider2D)selfCollider).radius = makeSmaller ? 40f : 60f;
-            } else if (selfCollider != null && colliderType == colliderTypeV2.Box) {
-                ((BoxCollider2D)selfCollider).size = makeSmaller ? new Vector2(40, 40) : new Vector2(70, 70);
-                ((BoxCollider2D)selfCollider).edgeRadius = makeSmaller ? 0.1f : 0.15f;
+            if (_selfCollider != null && colliderType == ColliderTypeV2.Circle) {
+                ((CircleCollider2D)_selfCollider).radius = makeSmaller ? 40f : 60f;
+            } else if (_selfCollider != null && colliderType == ColliderTypeV2.Box) {
+                ((BoxCollider2D)_selfCollider).size = makeSmaller ? new Vector2(40, 40) : new Vector2(70, 70);
+                ((BoxCollider2D)_selfCollider).edgeRadius = makeSmaller ? 0.1f : 0.15f;
             }
         }
     }
 
-    public enum colliderTypeV2 {
+    public enum ColliderTypeV2 {
         Circle,
         Box
     }

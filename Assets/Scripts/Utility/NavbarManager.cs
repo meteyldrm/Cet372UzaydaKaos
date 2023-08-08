@@ -1,11 +1,10 @@
-using System;
 using UnityEngine;
 
 namespace Utility {
     public class NavbarManager : MonoBehaviour {
         public int displayCount = 2;
-        private RectTransform rt;
-        private readonly int[] sizeMap = {
+        private RectTransform _rt;
+        private readonly int[] _sizeMap = {
             190,
             280,
             370,
@@ -13,7 +12,7 @@ namespace Utility {
         };
 
         private void Start() {
-            rt = GetComponent<RectTransform>();
+            _rt = GetComponent<RectTransform>();
             SetSize(displayCount);
         }
 
@@ -23,11 +22,11 @@ namespace Utility {
         }
 
         private void SetSize(int size) {
-            rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, sizeMap[size - 2]);
+            _rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, _sizeMap[size - 2]);
             foreach (Transform tr in transform) {
                 tr.gameObject.SetActive(false);
             }
-            for (int i = 0; i < size; i++) {
+            for (var i = 0; i < size; i++) {
                 transform.GetChild(i).gameObject.SetActive(true);
             }
         }

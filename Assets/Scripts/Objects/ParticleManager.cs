@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+// ReSharper disable FieldCanBeMadeReadOnly.Local
 
 namespace Objects {
 	/// <summary>
@@ -14,22 +15,22 @@ namespace Objects {
 	/// 2 pro: The particles have to be interchanged. Set parent when particle starts to move, lerp to determined position. For induced charges, move the entirety of negative charges away from the charge source.
 	/// </summary>
 	public class ParticleManager: MonoBehaviour {
-		private List<GameObject> positiveParticles = new();
-		private List<GameObject> negativeParticles = new();
+		private List<GameObject> _positiveParticles = new();
+		private List<GameObject> _negativeParticles = new();
 
 		[SerializeField] private List<Vector3> positivePositions;
 		[SerializeField] private List<Vector3> negativePositions;
 
 		private void Start() {
 			if (gameObject.TryGetComponent(out ElectricSpecs specs)) {
-				for (int i = 0; i < specs.protonDensity; i++) {
+				for (var i = 0; i < specs.protonDensity; i++) {
 					var positiveParticle = Instantiate(GeneralGuidance.Instance.positiveParticlePrefab, gameObject.transform, true);
-					positiveParticles.Add(positiveParticle);
+					_positiveParticles.Add(positiveParticle);
 				}
 
-				for (int i = 0; i < specs.protonDensity + 6; i++) {
+				for (var i = 0; i < specs.protonDensity + 6; i++) {
 					var negativeParticle = Instantiate(GeneralGuidance.Instance.negativeParticlePrefab, gameObject.transform, true);
-					negativeParticles.Add(negativeParticle);
+					_negativeParticles.Add(negativeParticle);
 				}
 			}
 
@@ -39,20 +40,20 @@ namespace Objects {
 		}
 
 		private void SetPositiveParticlePosition() {
-			for (int i = 0; i < positiveParticles.Count; i++) {
-				positiveParticles[i].transform.localPosition = positivePositions[i];
+			for (var i = 0; i < _positiveParticles.Count; i++) {
+				_positiveParticles[i].transform.localPosition = positivePositions[i];
 			}
 		}
 		
 		private void SetNegativeParticlePosition() {
-			for (int i = 0; i < negativeParticles.Count; i++) {
-				negativeParticles[i].transform.localPosition = negativePositions[i];
+			for (var i = 0; i < _negativeParticles.Count; i++) {
+				_negativeParticles[i].transform.localPosition = negativePositions[i];
 			}
 		}
 
 		public void SetDeltaNegativeParticlePosition(float count) {
 			var delta = 0;
-			foreach (var particle in negativeParticles) {
+			foreach (var particle in _negativeParticles) {
 				if (delta < count) {
 					particle.SetActive(true);
 					delta++;

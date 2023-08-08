@@ -5,52 +5,54 @@ using UI;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Utility;
+// ReSharper disable StringLiteralTypo
 
 namespace SceneManagers {
     public class LightAndChargeGuidance : MonoBehaviour
     {
-        public GameObject BottomSpeech;
-        private TextMeshProUGUI BottomSpeechTMP;
-        public GameObject TopSpeech;
-        private TextMeshProUGUI TopSpeechTMP;
+        [FormerlySerializedAs("BottomSpeech")] public GameObject bottomSpeech;
+        private TextMeshProUGUI _bottomSpeechTMP;
+        [FormerlySerializedAs("TopSpeech")] public GameObject topSpeech;
+        private TextMeshProUGUI _topSpeechTMP;
 
-        public GameObject APA;
-        public GameObject APASpeech;
-        private TextMeshProUGUI APASpeechTMP;
+        [FormerlySerializedAs("APA")] public GameObject apa;
+        [FormerlySerializedAs("APASpeech")] public GameObject apaSpeech;
+        private TextMeshProUGUI _apaSpeechTMP;
 
-        public GameObject NavigationArrows;
+        [FormerlySerializedAs("NavigationArrows")] public GameObject navigationArrows;
 
-        public GameObject Light;
-        public GameObject Report;
-        public GameObject EngReport;
-        public GameObject Materials;
-        public GameObject RubPanel;
-        public GameObject ChargePanel;
-        public GameObject GuidanceBackground;
+        [FormerlySerializedAs("Light")] public GameObject lightBulb;
+        [FormerlySerializedAs("Report")] public GameObject report;
+        [FormerlySerializedAs("EngReport")] public GameObject engReport;
+        [FormerlySerializedAs("Materials")] public GameObject materials;
+        [FormerlySerializedAs("RubPanel")] public GameObject rubPanel;
+        [FormerlySerializedAs("ChargePanel")] public GameObject chargePanel;
+        [FormerlySerializedAs("GuidanceBackground")] public GameObject guidanceBackground;
         
-        public Sprite RoomExterior;
-        public Sprite RoomInterior;
-        public Sprite ReactorExterior;
-        public Sprite ReactorInterior;
-        public Sprite TurbineInterior;
+        [FormerlySerializedAs("RoomExterior")] public Sprite roomExterior;
+        [FormerlySerializedAs("RoomInterior")] public Sprite roomInterior;
+        [FormerlySerializedAs("ReactorExterior")] public Sprite reactorExterior;
+        [FormerlySerializedAs("ReactorInterior")] public Sprite reactorInterior;
+        [FormerlySerializedAs("TurbineInterior")] public Sprite turbineInterior;
 
-        private UnityEvent evt;
-        private bool removeEvent = false;
+        private UnityEvent _evt;
+        private bool _removeEvent = false;
         
         // Start is called before the first frame update
-        void Start() {
-            BottomSpeechTMP = BottomSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-            TopSpeechTMP = TopSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-            APASpeechTMP = APASpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-            evt = new UnityEvent();
+        private void Start() {
+            _bottomSpeechTMP = bottomSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            _topSpeechTMP = topSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            _apaSpeechTMP = apaSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            _evt = new UnityEvent();
             NextDialogue();
         }
         
-        private int dialogueIndex = -1;
+        private int _dialogueIndex = -1;
 
-        private readonly List<string> dialogues = new() {
+        private readonly List<string> _dialogues = new() {
             "A_Birkaç hafta önce gemide elektriksel problemler yaşamaya başlamıştık. Dışarıdan ışıkların kapalı olduğunu görmüşsündür, problemlerin neden meydana geldiğini çözmeye çalışıyordum.",
             "A_Etrafta yürürken veya camları silerken ışıkların yanıp söndüğünü fark ettim, buna sebep olan şey sürtünme olmalı fakat hangi malzemelerin yaptığını bilmiyorum.\n\nSorun çıkarabileceğini düşündüğüm 6 tane malzeme topladım ama hata yapmış olabilirim.",
             "A_Test etmek için ufak bir ampul düzeneği de kurdum. Objeleri ampule dokundurarak belki yakmayı başarırsın.\n\nObjeleri açılan panele yerleştirip birbirlerine sürterek hangi kombinasyonların elektriksel probleme yol açtığını bulabilir misin? Emin olmak için 2-3 kere sürt.",
@@ -111,76 +113,81 @@ namespace SceneManagers {
             //Activity 6
             "A_Görünüşe göre hiç elektrik üretmiyoruz. Buhar olduğunu görüyorum ama türbinlerin dönmeye başlaması lazım. Döndürme kolunu çevirir misin?",
             "A_Sen kolu çevirdikçe elektrik üretmeye başlıyoruz!\n\nÇevirmeye devam et!",
-            "A_Tam güce kavuştuk! Yardımın için teşekkür ederim $NAME$, uzay gemisini kurtardın!.. Tatil yapmaya gelmiştin, değil mi?",
+            "A_Tam güce kavuştuk! Yardımın için teşekkür ederim $NAME$, uzay gemisini kurtardın!.. Tatil yapmaya gelmiştin, değil mi?"
         };
 
-        public static string staticstartswith = null;
-        public void SetDialogue(string startswith = "") {
-            if (staticstartswith != null) {
-                for (int i = 0; i < dialogues.Count; i++) {
-                    var dlg = dialogues[i].TrimStart("A_");
+        private static string _staticStartsWith = null;
+
+        private void SetDialogue(string startsWith = "") {
+            if (_staticStartsWith != null) {
+                for (var i = 0; i < _dialogues.Count; i++) {
+                    var dlg = _dialogues[i].TrimStart("A_");
                     dlg = dlg.TrimStart("P_");
-                    if (dlg.StartsWith(staticstartswith)) {
-                        dialogueIndex = i;
-                        DisplayDialogue(dialogues[dialogueIndex]);
+                    // ReSharper disable once InvertIf
+                    if (dlg.StartsWith(_staticStartsWith)) {
+                        _dialogueIndex = i;
+                        DisplayDialogue(_dialogues[_dialogueIndex]);
                         break;
                     }
                 }
 
-                staticstartswith = null;
+                _staticStartsWith = null;
                 return;
             }
-            for (int i = 0; i < dialogues.Count; i++) {
-                var dlg = dialogues[i].TrimStart("A_");
+            for (var i = 0; i < _dialogues.Count; i++) {
+                var dlg = _dialogues[i].TrimStart("A_");
                 dlg = dlg.TrimStart("P_");
-                if (dlg.StartsWith(startswith)) {
-                    dialogueIndex = i;
-                    DisplayDialogue(dialogues[dialogueIndex]);
+                // ReSharper disable once InvertIf
+                if (dlg.StartsWith(startsWith)) {
+                    _dialogueIndex = i;
+                    DisplayDialogue(_dialogues[_dialogueIndex]);
                     break;
                 }
             }
         }
 
         public void PrevDialogue() {
-            if (dialogueIndex > 0) {
-                dialogueIndex--;
-                DisplayDialogue(dialogues[dialogueIndex]);
+            // ReSharper disable once InvertIf
+            if (_dialogueIndex > 0) {
+                _dialogueIndex--;
+                DisplayDialogue(_dialogues[_dialogueIndex]);
             }
         }
         public void NextDialogue() {
-            if (removeEvent) {
-                evt.RemoveAllListeners();
+            if (_removeEvent) {
+                _evt.RemoveAllListeners();
             }
             
-            if (dialogueIndex < dialogues.Count - 1) {
-                dialogueIndex++;
-                DisplayDialogue(dialogues[dialogueIndex]);
+            if (_dialogueIndex < _dialogues.Count - 1) {
+                _dialogueIndex++;
+                DisplayDialogue(_dialogues[_dialogueIndex]);
             }
 
-            if (dialogueIndex == dialogues.Count) {
-                APASpeech.SetActive(false);
-                BottomSpeech.SetActive(false);
+            // ReSharper disable once InvertIf
+            if (_dialogueIndex == _dialogues.Count) {
+                apaSpeech.SetActive(false);
+                bottomSpeech.SetActive(false);
                 print("Light guidance finalized");
                 //GeneralGuidance.Instance.LoadNextScenario();
             }
         }
 
         private void DisplayDialogue(string dialogue) {
-            bool apaTurn = false;
-            bool playerTurn = false;
+            var apaTurn = false;
+            var playerTurn = false;
             if (dialogue.StartsWith("ACTION ")) {
                 dialogue = dialogue.Replace("ACTION ", "");
 
                 switch (dialogue) {
                     case "Skip": {
-                        Report.SetActive(false);
-                        Materials.SetActive(false);
-                        dialogueIndex = 7;
+                        report.SetActive(false);
+                        materials.SetActive(false);
+                        _dialogueIndex = 7;
                         NextDialogue();
                         break;
                     }
                     case "Particles": {
-                        foreach (Transform tr in Materials.transform) {
+                        foreach (Transform tr in materials.transform) {
                             tr.gameObject.GetComponent<ElectricSpecs>().OnShowVisualParticles();
                         }
 
@@ -199,49 +206,49 @@ namespace SceneManagers {
                 
             if (dialogue.StartsWith("Etrafta yürürken")) {
                 //Display draggables
-                Materials.SetActive(true);
+                materials.SetActive(true);
             }
 
             if (dialogue.StartsWith("Test etmek için")) {
                 GeneralGuidance.Instance.activityIndex = 1;
-                //Hide APA, display lightbulb
-                APA.SetActive(false);
-                Light.SetActive(true);
-                NavigationArrows.SetActive(false);
+                //Hide APA, display lightBulb
+                apa.SetActive(false);
+                lightBulb.SetActive(true);
+                navigationArrows.SetActive(false);
                 GeneralGuidance.Instance.allowDrag = true;
-                RubPanel.SetActive(true);
+                rubPanel.SetActive(true);
             }
 
             if (dialogue.StartsWith("Ampul yandı! ")) {
                 var index = GeneralGuidance.Instance.navbar.AddButton();
                 GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
                 GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleReport);
-                evt.AddListener(NextDialogue);
-                removeEvent = true;
+                _evt.AddListener(NextDialogue);
+                _removeEvent = true;
             }
 
             if (dialogue.StartsWith("İlk kombinasyonu doğru yazdın!")) {
                 // reportSetInactive = true;
-                APA.SetActive(false);
+                apa.SetActive(false);
                 // NavigationArrows.SetActive(true);
             }
 
             if (dialogue.StartsWith("Tebrikler, rapor başarılı!")) {
-                NavigationArrows.SetActive(true);
-                Report.SetActive(false);
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 2; j++) {
-                        GeneralGuidance.Instance.materialReportArray[i, j, 1] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
-                        GeneralGuidance.Instance.materialReportArray[i, j, 2] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
+                navigationArrows.SetActive(true);
+                report.SetActive(false);
+                for (var i = 0; i < 3; i++) {
+                    for (var j = 0; j < 2; j++) {
+                        GeneralGuidance.Instance.MaterialReportArray[i, j, 1] = GeneralGuidance.Instance.MaterialReportArray[i, j, 0];
+                        GeneralGuidance.Instance.MaterialReportArray[i, j, 2] = GeneralGuidance.Instance.MaterialReportArray[i, j, 0];
                     }
                 }
             }
 
             if (dialogue.StartsWith("Sen raporu hazırlarken")) {
                 GeneralGuidance.Instance.activityIndex = 2;
-                APA.SetActive(true);
-                Light.SetActive(false);
-                RubPanel.SetActive(false);
+                apa.SetActive(true);
+                lightBulb.SetActive(false);
+                rubPanel.SetActive(false);
             }
 
             if (dialogue.StartsWith("Objeleri, rapordan merceğe ")) {
@@ -249,24 +256,24 @@ namespace SceneManagers {
             }
             
             if (dialogue.StartsWith("Hangi objelerin birbiriyle")) {
-                NavigationArrows.SetActive(false);
-                APA.SetActive(false);
-                ChargePanel.SetActive(true);
-                GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
+                navigationArrows.SetActive(false);
+                apa.SetActive(false);
+                chargePanel.SetActive(true);
+                GeneralGuidance.Instance.rubbingMachine = chargePanel.GetComponent<RubbingMachineManager>();
                 GeneralGuidance.Instance.rubbingMachine.slot1 = null;
                 GeneralGuidance.Instance.rubbingMachine.slot2 = null;
                 DeleteMaterials();
-                Materials.SetActive(true);
+                materials.SetActive(true);
                 GeneralGuidance.Instance.report.ConvertToChargeAmounts();
                 GeneralGuidance.Instance.report.dualityConstraint = false;
                 GeneralGuidance.Instance.report.chargeObsConstraint = true;
-                for (int i = 0; i < Report.transform.childCount; i++) {
-                    if (Report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
+                for (var i = 0; i < report.transform.childCount; i++) {
+                    if (report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
                         draggable.canDrag = true;
                     }
                 }
-                evt.AddListener(NextDialogue);
-                removeEvent = true;
+                _evt.AddListener(NextDialogue);
+                _removeEvent = true;
             }
 
             if (dialogue.StartsWith("Yazdığın yükler doğru görünüyor!")) {
@@ -274,213 +281,215 @@ namespace SceneManagers {
             }
 
             if (dialogue.StartsWith("Raporu bitirmişin")) {
-                Report.SetActive(false);
-                APA.SetActive(true);
-                RubPanel.SetActive(false);
-                NavigationArrows.SetActive(true);
+                report.SetActive(false);
+                apa.SetActive(true);
+                rubPanel.SetActive(false);
+                navigationArrows.SetActive(true);
                 GeneralGuidance.Instance.notifyOnSnap = false;
             }
             
             if (dialogue.StartsWith("Önem sırasına")) {
                 GeneralGuidance.Instance.activityIndex = 3;
-                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomExterior;
-                GuidanceBackground.transform.GetChild(0).gameObject.SetActive(false);
-                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(true);
-                shouldChangeApaVisibility = false;
+                guidanceBackground.GetComponent<SpriteRenderer>().sprite = roomExterior;
+                guidanceBackground.transform.GetChild(0).gameObject.SetActive(false);
+                guidanceBackground.transform.GetChild(1).gameObject.SetActive(true);
+                _shouldChangeApaVisibility = false;
             }
 
             if (dialogue.StartsWith("Kapıda biraz")) {
-                ChargePanel.SetActive(true);
-                NavigationArrows.SetActive(true);
-                GuidanceBackground.transform.GetChild(1).GetComponent<ElectricSpecs>().OnShowVisualParticles();
+                chargePanel.SetActive(true);
+                navigationArrows.SetActive(true);
+                guidanceBackground.transform.GetChild(1).GetComponent<ElectricSpecs>().OnShowVisualParticles();
             }
 
             if (dialogue.StartsWith("Kapıyı fazla yükünden")) {
-                NavigationArrows.SetActive(false);
-                APA.SetActive(false);
+                navigationArrows.SetActive(false);
+                apa.SetActive(false);
             }
 
             if (dialogue.StartsWith("Kapının net yükünü sıfırladın!")) {
-                ChargePanel.SetActive(false);
-                Report.SetActive(false);
-                APA.SetActive(true);
-                shouldChangeApaVisibility = true;
+                chargePanel.SetActive(false);
+                report.SetActive(false);
+                apa.SetActive(true);
+                _shouldChangeApaVisibility = true;
                 DeleteMaterials();
-                NavigationArrows.SetActive(true);
-                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+                navigationArrows.SetActive(true);
+                guidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
             }
 
             if (dialogue.StartsWith("Burası yaşam destek odası.")) {
                 GeneralGuidance.Instance.activityIndex = 4;
                 GeneralGuidance.Instance.rubbingMachine.doOnce = true;
-                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = RoomInterior;
-                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
-                GuidanceBackground.transform.GetChild(2).gameObject.SetActive(true);
-                GuidanceBackground.transform.GetChild(2).GetComponent<ElectricSpecs>().OnShowVisualParticles();
+                guidanceBackground.GetComponent<SpriteRenderer>().sprite = roomInterior;
+                guidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+                guidanceBackground.transform.GetChild(2).gameObject.SetActive(true);
+                guidanceBackground.transform.GetChild(2).GetComponent<ElectricSpecs>().OnShowVisualParticles();
             }
 
             if (dialogue.StartsWith("Yüklü tahtaya ancak")) {
-                APA.SetActive(false);
-                shouldChangeApaVisibility = false;
-                NavigationArrows.SetActive(false);
-                ChargePanel.SetActive(true);
+                apa.SetActive(false);
+                _shouldChangeApaVisibility = false;
+                navigationArrows.SetActive(false);
+                chargePanel.SetActive(true);
             }
 
             if (dialogue.StartsWith("Paneli açığa çıkarmayı")) {
-                NavigationArrows.SetActive(true);
-                APA.SetActive(true);
-                Report.SetActive(false);
+                navigationArrows.SetActive(true);
+                apa.SetActive(true);
+                report.SetActive(false);
                 DeleteMaterials();
-                ChargePanel.SetActive(false);
+                chargePanel.SetActive(false);
             }
             
             if (dialogue.StartsWith("Teknik rapora erişmen için")) {
-                NavigationArrows.SetActive(false);
+                navigationArrows.SetActive(false);
                 var index = GeneralGuidance.Instance.navbar.AddButton();
                 GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
                 GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
-                evt.AddListener(NextDialogue);
-                removeEvent = true;
+                _evt.AddListener(NextDialogue);
+                _removeEvent = true;
             }
 
             if (dialogue.StartsWith("Yardımın için teşekkür")) {
-                NavigationArrows.SetActive(true);
+                navigationArrows.SetActive(true);
             }
 
             if (dialogue.StartsWith("Raporu oluşturup kısmen")) {
-                NavigationArrows.SetActive(false);
+                navigationArrows.SetActive(false);
             }
 
             if (dialogue.StartsWith("Sistem raporu onayladı,")) {
-                NavigationArrows.SetActive(true);
+                navigationArrows.SetActive(true);
             }
 
             if (dialogue.StartsWith("Nükleer reaktör bu kapının")) {
                 GeneralGuidance.Instance.activityIndex = 5;
-                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = ReactorExterior;
-                GuidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
-                GuidanceBackground.transform.GetChild(2).gameObject.SetActive(false);
+                guidanceBackground.GetComponent<SpriteRenderer>().sprite = reactorExterior;
+                guidanceBackground.transform.GetChild(1).gameObject.SetActive(false);
+                guidanceBackground.transform.GetChild(2).gameObject.SetActive(false);
             }
 
             if (dialogue.StartsWith("Nasıl görünüyor")) {
-                GuidanceBackground.GetComponent<SpriteRenderer>().sprite = ReactorInterior;
+                guidanceBackground.GetComponent<SpriteRenderer>().sprite = reactorInterior;
             }
             
             if (dialogue.StartsWith("Reaktörün üç yanında")) {
-                ChargePanel.SetActive(true);
+                chargePanel.SetActive(true);
             }
 
 
             if (apaTurn) {
-                if (APA.activeInHierarchy) {
-                    APASpeech.SetActive(true);
-                    TopSpeech.SetActive(false);
-                    BottomSpeech.SetActive(false);
-                    APASpeechTMP.text = Interpolator(dialogue);
+                if (apa.activeInHierarchy) {
+                    apaSpeech.SetActive(true);
+                    topSpeech.SetActive(false);
+                    bottomSpeech.SetActive(false);
+                    _apaSpeechTMP.text = Interpolator(dialogue);
                 } else {
-                    APASpeech.SetActive(false);
-                    TopSpeech.SetActive(true);
-                    BottomSpeech.SetActive(false);
-                    TopSpeechTMP.text = Interpolator(dialogue);
+                    apaSpeech.SetActive(false);
+                    topSpeech.SetActive(true);
+                    bottomSpeech.SetActive(false);
+                    _topSpeechTMP.text = Interpolator(dialogue);
                 }
             } else if (playerTurn) {
-                APASpeech.SetActive(false);
-                BottomSpeech.SetActive(true);
-                BottomSpeechTMP.text = Interpolator(dialogue);
+                apaSpeech.SetActive(false);
+                bottomSpeech.SetActive(true);
+                _bottomSpeechTMP.text = Interpolator(dialogue);
             }
         }
 
         private void Update() {
+            // ReSharper disable once InvertIf
             if (GeneralGuidance.Instance.skipActivity) {
                 //Ac2-7
                 //Ac3-20
                 //Ac3-20
-                if (dialogueIndex < 7) {
+                // ReSharper disable once ConvertIfStatementToSwitchStatement
+                if (_dialogueIndex < 7) {
                     GeneralGuidance.Instance.allowDrag = true;
-                    NavigationArrows.SetActive(true);
+                    navigationArrows.SetActive(true);
                     if (GeneralGuidance.Instance.navbar.GetComponent<NavbarManager>().displayCount == 2) {
                         var index = GeneralGuidance.Instance.navbar.AddButton();
                         GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
                         GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleReport);
                     }
-                    GeneralGuidance.Instance.materialReportArray = new string[3, 2, 3];
-                    GeneralGuidance.Instance.materialReportArray[0, 0, 0] = "1||3,010964||1|0";
-                    GeneralGuidance.Instance.materialReportArray[0, 1, 0] = "-1||3,010964||0|1";
+                    GeneralGuidance.Instance.MaterialReportArray = new string[3, 2, 3];
+                    GeneralGuidance.Instance.MaterialReportArray[0, 0, 0] = "1||3,010964||1|0";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 1, 0] = "-1||3,010964||0|1";
                     
-                    GeneralGuidance.Instance.materialReportArray[1, 0, 0] = "1||3,010964||3|5";
-                    GeneralGuidance.Instance.materialReportArray[1, 1, 0] = "-1||3,010964||5|3";
+                    GeneralGuidance.Instance.MaterialReportArray[1, 0, 0] = "1||3,010964||3|5";
+                    GeneralGuidance.Instance.MaterialReportArray[1, 1, 0] = "-1||3,010964||5|3";
                     
-                    GeneralGuidance.Instance.materialReportArray[2, 0, 0] = "-1||3,010964||3|1";
-                    GeneralGuidance.Instance.materialReportArray[2, 1, 0] = "1||3,010964||1|3";
+                    GeneralGuidance.Instance.MaterialReportArray[2, 0, 0] = "-1||3,010964||3|1";
+                    GeneralGuidance.Instance.MaterialReportArray[2, 1, 0] = "1||3,010964||1|3";
                     GeneralGuidance.Instance.notifyOnSnap = true;
-                    dialogueIndex = 6;
+                    _dialogueIndex = 6;
                     NextDialogue();
                     return;
                 }
 
-                if (dialogueIndex < 20) {
-                    Report.SetActive(false);
+                if (_dialogueIndex < 20) {
+                    report.SetActive(false);
                     GeneralGuidance.Instance.notifyOnSnap = false;
                     
-                    GeneralGuidance.Instance.materialReportArray[0, 0, 0] = "1|1|3,010964||1|0";
-                    GeneralGuidance.Instance.materialReportArray[0, 1, 0] = "-1|-1|3,010964||0|1";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 0, 0] = "1|1|3,010964||1|0";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 1, 0] = "-1|-1|3,010964||0|1";
                     
-                    GeneralGuidance.Instance.materialReportArray[1, 0, 0] = "1|1|3,010964||3|5";
-                    GeneralGuidance.Instance.materialReportArray[1, 1, 0] = "-1|-1|3,010964||5|3";
+                    GeneralGuidance.Instance.MaterialReportArray[1, 0, 0] = "1|1|3,010964||3|5";
+                    GeneralGuidance.Instance.MaterialReportArray[1, 1, 0] = "-1|-1|3,010964||5|3";
                     
-                    GeneralGuidance.Instance.materialReportArray[2, 0, 0] = "-1|-1|3,010964||3|1";
-                    GeneralGuidance.Instance.materialReportArray[2, 1, 0] = "1|1|3,010964||1|3";
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 2; j++) {
-                            GeneralGuidance.Instance.materialReportArray[i, j, 1] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
-                            GeneralGuidance.Instance.materialReportArray[i, j, 2] = GeneralGuidance.Instance.materialReportArray[i, j, 0];
+                    GeneralGuidance.Instance.MaterialReportArray[2, 0, 0] = "-1|-1|3,010964||3|1";
+                    GeneralGuidance.Instance.MaterialReportArray[2, 1, 0] = "1|1|3,010964||1|3";
+                    for (var i = 0; i < 3; i++) {
+                        for (var j = 0; j < 2; j++) {
+                            GeneralGuidance.Instance.MaterialReportArray[i, j, 1] = GeneralGuidance.Instance.MaterialReportArray[i, j, 0];
+                            GeneralGuidance.Instance.MaterialReportArray[i, j, 2] = GeneralGuidance.Instance.MaterialReportArray[i, j, 0];
                         }
                     }
                     
-                    GeneralGuidance.Instance.materialReportArray[0, 0, 1] = "2|2|5,010964||1|0";
-                    GeneralGuidance.Instance.materialReportArray[0, 1, 1] = "-2|-2|5,010964||0|1";
-                    GeneralGuidance.Instance.materialReportArray[0, 0, 2] = "4|4|7,010964||1|0";
-                    GeneralGuidance.Instance.materialReportArray[0, 1, 2] = "-4|-4|7,010964||0|1";
-                    APA.SetActive(true);
-                    Light.SetActive(false);
-                    RubPanel.SetActive(false);
-                    NavigationArrows.SetActive(true);
-                    ChargePanel.SetActive(true);
-                    GeneralGuidance.Instance.rubbingMachine = ChargePanel.GetComponent<RubbingMachineManager>();
+                    GeneralGuidance.Instance.MaterialReportArray[0, 0, 1] = "2|2|5,010964||1|0";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 1, 1] = "-2|-2|5,010964||0|1";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 0, 2] = "4|4|7,010964||1|0";
+                    GeneralGuidance.Instance.MaterialReportArray[0, 1, 2] = "-4|-4|7,010964||0|1";
+                    apa.SetActive(true);
+                    lightBulb.SetActive(false);
+                    rubPanel.SetActive(false);
+                    navigationArrows.SetActive(true);
+                    chargePanel.SetActive(true);
+                    GeneralGuidance.Instance.rubbingMachine = chargePanel.GetComponent<RubbingMachineManager>();
                     GeneralGuidance.Instance.rubbingMachine.slot1 = null;
                     GeneralGuidance.Instance.rubbingMachine.slot2 = null;
                     DeleteMaterials();
-                    Materials.SetActive(true);
+                    materials.SetActive(true);
                     GeneralGuidance.Instance.report.ConvertToChargeAmounts();
                     GeneralGuidance.Instance.report.dualityConstraint = false;
                     GeneralGuidance.Instance.report.chargeObsConstraint = true;
-                    for (int i = 0; i < Report.transform.childCount; i++) {
-                        if (Report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
+                    for (var i = 0; i < report.transform.childCount; i++) {
+                        if (report.transform.GetChild(i).TryGetComponent(out Draggable draggable)) {
                             draggable.canDrag = true;
                         }
                     }
-                    ChargePanel.SetActive(false);
+                    chargePanel.SetActive(false);
                     
-                    dialogueIndex = 19;
+                    _dialogueIndex = 19;
                     NextDialogue();
                     return;
                 }
 
-                if (dialogueIndex < 25) {
-                    dialogueIndex = 26;
+                if (_dialogueIndex < 25) {
+                    _dialogueIndex = 26;
                     NextDialogue();
                     return;
                 }
                 
-                if (dialogueIndex < 36) {
+                // ReSharper disable once InvertIf
+                if (_dialogueIndex < 36) {
                     if (GeneralGuidance.Instance.navbar.GetComponent<NavbarManager>().displayCount == 3) {
                         var index = GeneralGuidance.Instance.navbar.AddButton();
                         GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.RemoveAllListeners();
                         GeneralGuidance.Instance.navbar.transform.GetChild(index).GetComponent<Button>().onClick.AddListener(ToggleEngReport);
                     }
-                    dialogueIndex = 37;
+                    _dialogueIndex = 37;
                     NextDialogue();
-                    return;
                 }
             }
         }
@@ -506,58 +515,59 @@ namespace SceneManagers {
                 SetDialogue("Paneli açığa çıkarmayı başardın!");
             }
 
+            // ReSharper disable once InvertIf
             if (GeneralGuidance.Instance.skipDialogueEngReport) {
                 GeneralGuidance.Instance.skipDialogueEngReport = false;
-                EngReport.SetActive(false);
+                engReport.SetActive(false);
                 NextDialogue();
             }
         }
 
-        private bool shouldChangeApaVisibility = true;
+        private bool _shouldChangeApaVisibility = true;
 
         private void ToggleReport() {
-            if (shouldChangeApaVisibility) {
-                APA.SetActive(Report.activeSelf);
+            if (_shouldChangeApaVisibility) {
+                apa.SetActive(report.activeSelf);
             }
-            Report.SetActive(!Report.activeSelf);
+            report.SetActive(!report.activeSelf);
             
-            if (APA.activeInHierarchy) {
-                APASpeech.SetActive(true);
-                TopSpeech.SetActive(false);
-                BottomSpeech.SetActive(false);
-                APASpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            if (apa.activeInHierarchy) {
+                apaSpeech.SetActive(true);
+                topSpeech.SetActive(false);
+                bottomSpeech.SetActive(false);
+                _apaSpeechTMP.text = Interpolator(_dialogues[_dialogueIndex]);
             } else {
-                APASpeech.SetActive(false);
-                TopSpeech.SetActive(true);
-                BottomSpeech.SetActive(false);
-                TopSpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+                apaSpeech.SetActive(false);
+                topSpeech.SetActive(true);
+                bottomSpeech.SetActive(false);
+                _topSpeechTMP.text = Interpolator(_dialogues[_dialogueIndex]);
             }
             
-            evt.Invoke();
+            _evt.Invoke();
         }
         
         private void ToggleEngReport() {
-            if (shouldChangeApaVisibility) {
-                APA.SetActive(EngReport.activeSelf);
+            if (_shouldChangeApaVisibility) {
+                apa.SetActive(engReport.activeSelf);
             }
-            EngReport.SetActive(!EngReport.activeSelf);
+            engReport.SetActive(!engReport.activeSelf);
             
-            if (APA.activeInHierarchy) {
-                APASpeech.SetActive(true);
-                TopSpeech.SetActive(false);
-                BottomSpeech.SetActive(false);
-                APASpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+            if (apa.activeInHierarchy) {
+                apaSpeech.SetActive(true);
+                topSpeech.SetActive(false);
+                bottomSpeech.SetActive(false);
+                _apaSpeechTMP.text = Interpolator(_dialogues[_dialogueIndex]);
             } else {
-                APASpeech.SetActive(false);
-                TopSpeech.SetActive(true);
-                BottomSpeech.SetActive(false);
-                TopSpeechTMP.text = Interpolator(dialogues[dialogueIndex]);
+                apaSpeech.SetActive(false);
+                topSpeech.SetActive(true);
+                bottomSpeech.SetActive(false);
+                _topSpeechTMP.text = Interpolator(_dialogues[_dialogueIndex]);
             }
             
-            evt.Invoke();
+            _evt.Invoke();
         }
 
-        private string Interpolator(string dialogue) {
+        private static string Interpolator(string dialogue) {
             dialogue = dialogue.TrimStart("A_");
             dialogue = dialogue.TrimStart("P_");
             dialogue = dialogue.Replace("$NAME$", GeneralGuidance.Instance.playerName.Split(" ")[0].Trim(' '));
@@ -566,7 +576,7 @@ namespace SceneManagers {
         }
 
         private void DeleteMaterials() {
-            foreach (Transform tr in Materials.transform) {
+            foreach (Transform tr in materials.transform) {
                 Destroy(tr.gameObject);
             }
         }

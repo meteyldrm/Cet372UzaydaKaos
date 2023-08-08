@@ -9,22 +9,22 @@ namespace SceneManagers {
         public GameObject draggable;
         public ElectricSpecs draggableSpecs;
         public GameObject chargeText;
-        private TMP_Text cText;
+        private TMP_Text _cText;
         public GameObject reportObject;
         
         // Start is called before the first frame update
         private void Start() {
             draggableSpecs = draggable.GetComponent<ElectricSpecs>();
-            cText = chargeText.GetComponent<TMP_Text>();
+            _cText = chargeText.GetComponent<TMP_Text>();
             GeneralGuidance.Instance.report = reportObject.GetComponent<ReportManager>();
         }
 
         // Update is called once per frame
         private void Update() {
-            cText.text = $"Boot charge: {draggableSpecs.getEffectiveCharge()}";
+            _cText.text = $"Boot charge: {draggableSpecs.GetEffectiveCharge()}";
         }
 
-        public List<GameObject> getDraggables() {
+        public List<GameObject> GetDraggables() {
             return new List<GameObject> { draggable };
         }
 
@@ -32,7 +32,7 @@ namespace SceneManagers {
             foreach (var obj in GeneralGuidance.GetAllSceneComponents<ElectricSpecs>()) {
                 obj.OnResetRubbing();
             }
-            cText.text = "Boot charge: 0";
+            _cText.text = "Boot charge: 0";
         }
 
         public void ToggleReport() {

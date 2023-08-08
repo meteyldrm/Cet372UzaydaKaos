@@ -1,4 +1,3 @@
-using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -15,30 +14,29 @@ namespace UI {
         private bool _configured;
 
         private void OnEnable() {
-            configure();
+            Configure();
         }
 
-        public void dismiss() {
-            for (int i = 0; i < transform.childCount; i++) {
+        public void Dismiss() {
+            for (var i = 0; i < transform.childCount; i++) {
                 transform.GetChild(i).gameObject.SetActive(false);
             }
         }
 
-        private void configure() {
-            if (!_configured) {
-                if (_alertActionTmp == null) _alertActionTmp = alertAction.GetComponent<TextMeshProUGUI>();
-                if (_alertBodyTmp == null) _alertBodyTmp = alertBody.GetComponent<TextMeshProUGUI>();
-                if (_alertTitleTmp == null) _alertTitleTmp = alertTitle.GetComponent<TextMeshProUGUI>();
+        private void Configure() {
+            if (_configured) return;
+            if (_alertActionTmp == null) _alertActionTmp = alertAction.GetComponent<TextMeshProUGUI>();
+            if (_alertBodyTmp == null) _alertBodyTmp = alertBody.GetComponent<TextMeshProUGUI>();
+            if (_alertTitleTmp == null) _alertTitleTmp = alertTitle.GetComponent<TextMeshProUGUI>();
                 
-                _configured = true;
-            }
+            _configured = true;
         }
 
-        public void alert(string title, string body, string action) {
-            for (int i = 0; i < transform.childCount; i++) {
+        public void Alert(string title, string body, string action) {
+            for (var i = 0; i < transform.childCount; i++) {
                 transform.GetChild(i).gameObject.SetActive(true);
             }
-            configure();
+            Configure();
             _alertTitleTmp.text = title;
             _alertBodyTmp.text = body;
             _alertActionTmp.text = action;

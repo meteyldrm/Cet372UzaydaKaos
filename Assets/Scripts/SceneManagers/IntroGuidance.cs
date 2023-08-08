@@ -1,34 +1,36 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
+// ReSharper disable StringLiteralTypo
 
 namespace SceneManagers {
     public class IntroGuidance : MonoBehaviour {
-        public GameObject BottomSpeech;
-        private TextMeshProUGUI BottomSpeechTMP;
+        [FormerlySerializedAs("BottomSpeech")] public GameObject bottomSpeech;
+        private TextMeshProUGUI _bottomSpeechTMP;
 
-        public GameObject APA;
-        public GameObject APASpeech;
-        private TextMeshProUGUI APASpeechTMP;
+        [FormerlySerializedAs("APA")] public GameObject apa;
+        [FormerlySerializedAs("APASpeech")] public GameObject apaSpeech;
+        private TextMeshProUGUI _apaSpeechTMP;
 
-        public GameObject NameTag;
-        public GameObject NameField1;
-        public GameObject NameField2;
-        public GameObject ShipBG;
-        public GameObject AirlockBG;
+        [FormerlySerializedAs("NameTag")] public GameObject nameTag;
+        [FormerlySerializedAs("NameField1")] public GameObject nameField1;
+        [FormerlySerializedAs("NameField2")] public GameObject nameField2;
+        [FormerlySerializedAs("ShipBG")] public GameObject shipBg;
+        [FormerlySerializedAs("AirlockBG")] public GameObject airlockBg;
         
         // Start is called before the first frame update
-        void Start() {
-            BottomSpeechTMP = BottomSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-            APASpeechTMP = APASpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-            ShipBG.SetActive(true);
-            AirlockBG.SetActive(false);
+        private void Start() {
+            _bottomSpeechTMP = bottomSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            _apaSpeechTMP = apaSpeech.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            shipBg.SetActive(true);
+            airlockBg.SetActive(false);
             NextDialogue();
         }
         
-        private int dialogueIndex = -1;
+        private int _dialogueIndex = -1;
 
-        private readonly List<string> dialogues = new() {
+        private readonly List<string> _dialogues = new() {
             "P_İşimin yorgunluğunu geride bırakmak için çok sabırsızım. Her şeyden uzakta tatil yapabilmenin mümkün olduğu kimin aklına gelirdi? Tek başıma uzaya çıktım!",
             "P_İşimin başında olmadan, rahatlayabileceğim bir tatil yapacağım. Hiç işimi düşünmem gerekmeyecek.",
             "P_Uzay gemisine yaklaşıyorum fakat ışıkları yanmıyor, bu çok tuhaf. Yine de kenetlenip gemiye binmeliyim, belki de herkes uyuyordur. Uzayda sürüklenerek kalmak istemem.",
@@ -43,23 +45,23 @@ namespace SceneManagers {
         };
 
         public void PrevDialogue() {
-            if (dialogueIndex > 0) {
-                dialogueIndex--;
-                DisplayDialogue(dialogues[dialogueIndex]);
-            }
+            if (_dialogueIndex <= 0) return;
+            _dialogueIndex--;
+            DisplayDialogue(_dialogues[_dialogueIndex]);
         }
         public void NextDialogue() {
-            if (dialogueIndex < dialogues.Count - 1) {
-                dialogueIndex++;
-                DisplayDialogue(dialogues[dialogueIndex]);
+            if (_dialogueIndex < _dialogues.Count - 1) {
+                _dialogueIndex++;
+                DisplayDialogue(_dialogues[_dialogueIndex]);
             }
 
-            if (dialogueIndex == dialogues.Count - 1) {
-                ShipBG.SetActive(false);
-                AirlockBG.SetActive(false);
-                NameTag.SetActive(false);
-                APASpeech.SetActive(false);
-                BottomSpeech.SetActive(false);
+            // ReSharper disable once InvertIf
+            if (_dialogueIndex == _dialogues.Count - 1) {
+                shipBg.SetActive(false);
+                airlockBg.SetActive(false);
+                nameTag.SetActive(false);
+                apaSpeech.SetActive(false);
+                bottomSpeech.SetActive(false);
                 GeneralGuidance.Instance.LoadNextScenario();
             }
         }
@@ -70,9 +72,9 @@ namespace SceneManagers {
 
                 switch (dialogue) {
                     case "Name": {
-                        NameTag.SetActive(true);
-                        APASpeech.SetActive(false);
-                        BottomSpeech.SetActive(false);
+                        nameTag.SetActive(true);
+                        apaSpeech.SetActive(false);
+                        bottomSpeech.SetActive(false);
                         break;
                     }
                 }
@@ -82,49 +84,48 @@ namespace SceneManagers {
 
                 if (dialogue.StartsWith("Uzay gemisine yaklaşıyorum")) {
                     //Old bg
-                    ShipBG.SetActive(true);
-                    AirlockBG.SetActive(false);
+                    shipBg.SetActive(true);
+                    airlockBg.SetActive(false);
                 }
 
                 if (dialogue.StartsWith("Hava kilidinde")) {
                     //New bg
-                    ShipBG.SetActive(false);
-                    AirlockBG.SetActive(true);
+                    shipBg.SetActive(false);
+                    airlockBg.SetActive(true);
                 }
 
                 if (dialogue.StartsWith("Merhaba! Benim adım")) {
-                    NameTag.SetActive(false);
+                    nameTag.SetActive(false);
                 }
                 
-                APASpeech.SetActive(false);
-                BottomSpeech.SetActive(true);
-                BottomSpeechTMP.text = Interpolator(dialogue);
+                apaSpeech.SetActive(false);
+                bottomSpeech.SetActive(true);
+                _bottomSpeechTMP.text = Interpolator(dialogue);
             } else if (dialogue.StartsWith("APA ") || dialogue.StartsWith("A_")) {
                 dialogue = dialogue.Replace("APA ", "").Replace("A_", "");
                 
                 if (dialogue.StartsWith("Merhaba! Beklettiğim")) {
                     //Show APA
-                    APA.SetActive(true);
+                    apa.SetActive(true);
                 }
-                APASpeech.SetActive(true);
-                BottomSpeech.SetActive(false);
-                APASpeechTMP.text = Interpolator(dialogue);
+                apaSpeech.SetActive(true);
+                bottomSpeech.SetActive(false);
+                _apaSpeechTMP.text = Interpolator(dialogue);
             }
         }
 
-        private string Interpolator(string dialogue) {
+        private static string Interpolator(string dialogue) {
             dialogue = dialogue.Replace("$NAME$", GeneralGuidance.Instance.playerName.Split(" ")[0]);
             dialogue = dialogue.Replace("$FULL_NAME$", GeneralGuidance.Instance.playerName);
             return dialogue;
         }
 
         public void CheckName() {
-            var c1 = NameField1.GetComponent<TMP_InputField>().text;
-            var c2 = NameField2.GetComponent<TMP_InputField>().text;
-            if (c1.Length > 0 && c2.Length > 0) {
-                GeneralGuidance.Instance.playerName = $"{c1} {c2}".Trim(' ');
-                NextDialogue();
-            }
+            var c1 = nameField1.GetComponent<TMP_InputField>().text;
+            var c2 = nameField2.GetComponent<TMP_InputField>().text;
+            if (c1.Length <= 0 || c2.Length <= 0) return;
+            GeneralGuidance.Instance.playerName = $"{c1} {c2}".Trim(' ');
+            NextDialogue();
         }
     }
 }

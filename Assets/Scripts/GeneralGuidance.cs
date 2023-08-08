@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Objects;
 using Reports;
@@ -6,13 +5,14 @@ using UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Utility;
+// ReSharper disable RedundantDefaultMemberInitializer
 
 /// <summary>
 /// Every script has a reference to here. Do NOT try to replicate an event architecture. A more flexible, in-situ object manufacturing system can be implemented.
 /// </summary>
 public class GeneralGuidance : Singleton<GeneralGuidance> {
 	#region Utility
-	private static readonly List<string> scenario = new() {
+	private static readonly List<string> Scenario = new() {
 		"Start",
 		"Intro",
 		"LightAndCharge",
@@ -23,14 +23,14 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	};
 
 	public int activityIndex = -1;
-	private int scenarioIndex = -1;
+	private int _scenarioIndex = -1;
 	public ReportManager report;
 	public EngReportManager engReport;
 	public RubbingMachineManager rubbingMachine;
 	public NavbarManager navbar;
 	public AlertController alert;
 	public GameObject helpPanel;
-	public AudioSource audio;
+	public AudioSource audioSource;
 	public void ToggleHelpPanel() {
 		helpPanel.SetActive(!helpPanel.activeSelf);
 	}
@@ -51,18 +51,19 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	}
 
 	public void LoadNextScenario() {
-		scenarioIndex++;
-		if (scenarioIndex <= scenario.Count) {
-			ScenarioStartup(scenario[scenarioIndex]);
+		_scenarioIndex++;
+		if (_scenarioIndex <= Scenario.Count) {
+			ScenarioStartup(Scenario[_scenarioIndex]);
 		}
 	}
 
+	// ReSharper disable once MemberCanBeMadeStatic.Local
 	private void ScenarioStartup(string objectName) {
 		var scenarioObject = GetSceneGameObjectByName(objectName, 1);
 		if (scenarioObject == null) {
 			Debug.LogError($"Scenario {objectName} unable to be loaded.");
 			return;
-		};
+		}
 		
 		switch (objectName) {
 			case "Start": {
@@ -111,6 +112,7 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	public static List<T> GetAllSceneComponents<T>(int depthLimit = 0) {
 		var all = new List<T>();
 		foreach (var obj in GetAllSceneGameObjects(depthLimit, requireActive: true)) {
+			// ReSharper disable once InvertIf
 			if (obj.TryGetComponent(out T component)) {
 				if (component != null) {
 					all.Add(component);
@@ -125,9 +127,11 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		return GetAllSceneGameObjectsByName(name, depthLimit, requireActive)[0];
 	}
 
+	// ReSharper disable once MemberCanBePrivate.Global
 	public static List<GameObject> GetAllSceneGameObjectsByName(string name, int depthLimit = 0, bool requireActive = false) {
-		List<GameObject> list = new List<GameObject>();
+		var list = new List<GameObject>();
 
+		// ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
 		foreach (var obj in GetAllSceneGameObjects(depthLimit, requireActive)) {
 			if (obj.name.Equals(name)) {
 				list.Add(obj);
@@ -141,16 +145,20 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		return list;
 	}
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public static List<GameObject> GetAllSceneGameObjects(int depthLimit = 0, bool requireActive = false) {
 		var rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
 		var all = new List<GameObject>();
 		foreach (var rootObject in rootObjects) {
 			all.AddRange(GetChildGameObjects(rootObject, 0, depthLimit));
 		}
-		
-		List<GameObject> GetChildGameObjects(GameObject obj, int currentDepth, int dl) {
+
+		return all;
+
+		IEnumerable<GameObject> GetChildGameObjects(GameObject obj, int currentDepth, int dl) {
 			var objList = new List<GameObject>();
 
+			// ReSharper disable once InvertIf
 			if ((requireActive && obj.activeSelf) || !requireActive) {
 				if (dl == 0 || currentDepth < dl) {
 					for (var i = 0; i < obj.transform.childCount; i++) {
@@ -163,8 +171,6 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 
 			return objList;
 		}
-
-		return all;
 	}
 	#endregion
 
@@ -177,9 +183,9 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// Iteration != 0 is used for the expanded report. Copy values, leave seconds empty.
 	/// </summary>
 	[SerializeField] private List<string> materialReportInitializationList = new();
-	public string[,,] materialReportArray = new string[3,2,3];
+	public string[,,] MaterialReportArray = new string[3,2,3];
 
-	[SerializeField] public List<GameObject> MaterialPrefabList = new();
+	[SerializeField] public List<GameObject> materialPrefabList = new();
 	[SerializeField] public GameObject positiveParticlePrefab;
 	[SerializeField] public GameObject negativeParticlePrefab;
 	#endregion
@@ -191,30 +197,32 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 			foreach (var i in materialReportInitializationList) {
 				var x = i.Split(" ; ");
 				var y = x[0].Split(",");
-				materialReportArray[int.Parse(y[0]), int.Parse(y[1]), int.Parse(y[2])] = x[1];
+				MaterialReportArray[int.Parse(y[0]), int.Parse(y[1]), int.Parse(y[2])] = x[1];
 			}
 		}
 		#endregion
 
-		audio = GetComponent<AudioSource>();
+		audioSource = GetComponent<AudioSource>();
 
 		//Skip chapter
-		scenarioIndex = -1;
+		_scenarioIndex = -1;
 		LoadNextScenario();
 	}
 
 	private void LateUpdate() {
+		// ReSharper disable once InvertIf
 		if (skipActivity) {
 			skipActivity = false;
-			if (scenarioIndex > 1) {
-				playerName = "Admin Test";
-				return;
+			switch (_scenarioIndex)
+			{
+				case > 1:
+					playerName = "Admin Test";
+					return;
+				case 1:
+					playerName = "Admin Test";
+					break;
 			}
-			
-			if (scenarioIndex == 1) {
-				playerName = "Admin Test";
-			}
-			
+
 			LoadNextScenario();
 		}
 	}
@@ -243,8 +251,9 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	}
 
 	public bool HasMatchingConjugate(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		if (materialReportArray[row, 0 == index ? 1 : 0, iteration] != null && materialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
-			var str = materialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
+		// ReSharper disable once InvertIf
+		if (MaterialReportArray[row, 0 == index ? 1 : 0, iteration] != null && MaterialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
+			var str = MaterialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
 			if (!string.IsNullOrEmpty(str) && str == $"{specs.materialID}") {
 				return true;
 			}
@@ -263,8 +272,8 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 	/// <param name="iteration"></param>
 	/// <returns></returns>
 	private bool SerializeSpecsToReport(ElectricSpecs specs, int row = 0, int index = 0, int iteration = 0) {
-		if (materialReportArray[row, 0 == index ? 1 : 0, iteration] != null && materialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
-			var str = materialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
+		if (MaterialReportArray[row, 0 == index ? 1 : 0, iteration] != null && MaterialReportArray[row, 0 == index ? 1 : 0, iteration] != string.Empty) {
+			var str = MaterialReportArray[row, 0 == index ? 1 : 0, iteration].Split("|")[5];
 			if (str == "" || str != $"{specs.materialID}") {
 				return false;
 			}
@@ -275,28 +284,29 @@ public class GeneralGuidance : Singleton<GeneralGuidance> {
 		// 	deleteFromCurrentIteration(specs.materialID, iteration);
 		// }
 		
-		materialReportArray[row, index, iteration] = $"{specs.getEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
+		MaterialReportArray[row, index, iteration] = $"{specs.GetEffectiveCharge()}||{specs.accumulatedTime}||{specs.materialID}|{specs.rubbingMaterialID}";
 		return true;
 	}
 	#endregion
 
 	#region Report Control
-	private void deleteFromCurrentIteration(int id, int iteration) {
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 2; j++) {
-				if (materialReportArray[i, j, iteration] != null && materialReportArray[i, j, iteration] != string.Empty && materialReportArray[i, j, iteration].Split("|")[4] == $"{id}") {
-					materialReportArray[i, j, iteration] = string.Empty;
+	private void DeleteFromCurrentIteration(int id, int iteration) {
+		for (var i = 0; i < 3; i++) {
+			for (var j = 0; j < 2; j++) {
+				if (MaterialReportArray[i, j, iteration] != null && MaterialReportArray[i, j, iteration] != string.Empty && MaterialReportArray[i, j, iteration].Split("|")[4] == $"{id}") {
+					MaterialReportArray[i, j, iteration] = string.Empty;
 				}
 			}
 		}
 	}
 
-	private bool wasFoundInCurrentIteration(int id, int iteration) {
-		bool x = false;
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 2; j++) {
-				if (materialReportArray[i, j, iteration] != null && materialReportArray[i, j, iteration] != string.Empty) {
-					if(materialReportArray[i, j, iteration].Split("|")[4] == $"{id}") x = true;
+	private bool WasFoundInCurrentIteration(int id, int iteration) {
+		var x = false;
+		for (var i = 0; i < 3; i++) {
+			for (var j = 0; j < 2; j++) {
+				// ReSharper disable once InvertIf
+				if (MaterialReportArray[i, j, iteration] != null && MaterialReportArray[i, j, iteration] != string.Empty) {
+					if(MaterialReportArray[i, j, iteration].Split("|")[4] == $"{id}") x = true;
 				}
 			}
 		}
